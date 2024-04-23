@@ -96,25 +96,31 @@ def draw_lanes(road):
     total_lanes = len(road["approach_lanes"]) + len(road["exit_lanes"])
 
     # Calculate the width of each lane based on the road width and the number of lanes
+    approach_width_ratio = 0.6
     lane_width = (road["width"] - road["divider_width"]) / total_lanes
+    approach_lane_width = (
+        road["width"] - road["divider_width"]) * approach_width_ratio / len(road["approach_lanes"])
+    exit_lane_width = (road["width"] - road["divider_width"]) * \
+        (1 - approach_width_ratio) / len(road["exit_lanes"])
 
     start_x, start_y = road["x"], road["y"]  # initialize origin
 
     def draw_lane(name, x, y, width, length, approach_direction):
+        text_offset = width // 2 - 10
         """Must choose the right origin for x, y"""
         if approach_direction == "north":
             # origin is top left
             pygame.draw.line(screen, LANE_LINE, (x, y), (x, y + length))
             pygame.draw.line(screen, LANE_LINE, (x + width, y),
                              (x + width, y + length))
-            draw_text(name, x + 12, start_y + 10, 90, ROAD_ACCENT)
+            draw_text(name, x + text_offset, start_y + 10, 90, ROAD_ACCENT)
             return (x + width, y)
         elif approach_direction == "south":
             # origin is bottom right
             pygame.draw.line(screen, LANE_LINE, (x, y), (x, y - length))
             pygame.draw.line(screen, LANE_LINE, (x - width, y),
                              (x - width, y - length))
-            draw_text(name, x - lane_width + 12,
+            draw_text(name, x - width + text_offset,
                       start_y - 10, 270, ROAD_ACCENT)
             return (x - width, y)
         elif approach_direction == "east":
@@ -122,21 +128,21 @@ def draw_lanes(road):
             pygame.draw.line(screen, LANE_LINE, (x, y), (x-length, y))
             pygame.draw.line(screen, LANE_LINE, (x, y+width),
                              (x-length, y+width))
-            draw_text(name, x - 10, y + 12, 0, ROAD_ACCENT)
+            draw_text(name, x - 10, y + text_offset, 0, ROAD_ACCENT)
             return (x, y+width)
         elif approach_direction == "west":
             # origin is bottom left
             pygame.draw.line(screen, LANE_LINE, (x, y), (x+length, y))
             pygame.draw.line(screen, LANE_LINE, (x, y-width),
                              (x + length, y - width))
-            draw_text(name, x + 10, y - lane_width + 12, 180, ROAD_ACCENT)
+            draw_text(name, x + 10, y - width + text_offset, 180, ROAD_ACCENT)
             return (x, y-width)
         return (x, y)
 
-    def draw_lane_lines(start_x, start_y, lanes):
+    def draw_lane_lines(start_x, start_y, width, lanes):
         for lane_name in lanes:
             start_x, start_y = draw_lane(
-                lane_name, start_x, start_y, lane_width, road["length"], road["approach_direction"])
+                lane_name, start_x, start_y, width, road["length"], road["approach_direction"])
         return start_x, start_y
 
     if road["approach_direction"] == "north":
@@ -144,17 +150,15 @@ def draw_lanes(road):
         start_x = road["x"]
         start_y = road["y"]
         # draw lanes lines
-        print('before', start_x, start_y)
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["approach_lanes"])
-        print('after', start_x, start_y)
+            start_x, start_y, approach_lane_width, road["approach_lanes"])
         # draw divider
         pygame.draw.rect(screen, DIVIDER, (start_x + 1, start_y,
                          road["divider_width"] - 1, road["length"]))
         start_x += road["divider_width"]
         # draw exit lanes
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["exit_lanes"])
+            start_x, start_y, exit_lane_width, road["exit_lanes"])
 
     elif road["approach_direction"] == "south":
         # draw right to left
@@ -162,13 +166,13 @@ def draw_lanes(road):
         start_y = road["y"] + road["length"]
         # draw lanes lines
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["approach_lanes"])
+            start_x, start_y, approach_lane_width, road["approach_lanes"])
         # draw divider
         pygame.draw.rect(screen, DIVIDER, (start_x -
                          road["divider_width"], start_y - road["length"], road["divider_width"], road["length"]))
         start_x -= road["divider_width"]
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["exit_lanes"])
+            start_x, start_y, exit_lane_width, road["exit_lanes"])
 
     elif road["approach_direction"] == "east":
         # draw top to bottom
@@ -176,13 +180,13 @@ def draw_lanes(road):
         start_y = road["y"]
         # draw lanes lines
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["approach_lanes"])
+            start_x, start_y, approach_lane_width, road["approach_lanes"])
         # draw divider
         pygame.draw.rect(screen, DIVIDER, (start_x - road["length"], start_y + 1,
                                            road["length"], road["divider_width"] - 1))
         start_y += road["divider_width"]
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["exit_lanes"])
+            start_x, start_y, exit_lane_width, road["exit_lanes"])
 
     elif road["approach_direction"] == "west":
         # draw bottom to top
@@ -190,13 +194,13 @@ def draw_lanes(road):
         start_y = road["y"] + road["width"]
         # draw lanes lines
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["approach_lanes"])
+            start_x, start_y, approach_lane_width, road["approach_lanes"])
         # draw divider
         pygame.draw.rect(screen, DIVIDER, (start_x, start_y - road["divider_width"] + 1,
                                            road["length"], road["divider_width"] - 1))
         start_y -= road["divider_width"]
         start_x, start_y = draw_lane_lines(
-            start_x, start_y, road["exit_lanes"])
+            start_x, start_y, exit_lane_width, road["exit_lanes"])
 
 
 def draw_streets():
