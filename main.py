@@ -13,8 +13,9 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Initialize font
 pygame.font.init()
-font_size = 14
-lane_font = pygame.font.Font(None, font_size)  # Using a default font
+font_size = 16
+font_path = "./fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf"
+lane_font = pygame.font.Font(font_path, font_size)  # Using a default font
 
 # colors
 BLACK = (0, 0, 0)
@@ -24,6 +25,7 @@ GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 BACKGROUND = (68, 80, 99)
 ROAD = (47, 52, 64)
+ROAD_ACCENT = (98, 110, 129)
 LANE_LINE = (255, 255, 255)
 DIVIDER = (41, 96, 92)
 
@@ -41,8 +43,8 @@ roads_config = [{
     "length": screen_height//2-(road_width//2),
     "divider_width": 20,
     "approach_direction": "south",
-    "approach_lanes": ('left', 'through', 'through', 'right'),
-    "exit_lanes": ('through', 'through'),
+    "approach_lanes": ['left', 'through', 'right'],
+    "exit_lanes": ['through'],
 }, {
     "name": "Victoria Street",
     "x": 0,
@@ -51,8 +53,8 @@ roads_config = [{
     "length": screen_width//2-(road_width//2),
     "divider_width": 20,
     "approach_direction": "east",
-    "approach_lanes": ('left+through', 'through', 'through', 'right'),
-    "exit_lanes": ('through', 'through', 'through'),
+    "approach_lanes": ['left', 'through', 'right'],
+    "exit_lanes": ['through'],
 }, {
     "name": "Victoria Street",
     "x": screen_width//2+(road_width//2),
@@ -61,8 +63,8 @@ roads_config = [{
     "length": screen_width//2-(road_width//2),
     "divider_width": 20,
     "approach_direction": "west",
-    "approach_lanes": ('left+through', 'through', 'through', 'right'),
-    "exit_lanes": ('through', 'through', 'through'),
+    "approach_lanes": ['left', 'through', 'right'],
+    "exit_lanes": ['through'],
 }, {
     "name": "Russell Street",
     "x": screen_width//2-(road_width//2),
@@ -71,8 +73,8 @@ roads_config = [{
     "length": screen_height//2-(road_width//2),
     "divider_width": 20,
     "approach_direction": "north",
-    "approach_lanes": ('left', 'through', 'through', 'right'),
-    "exit_lanes": ('through', 'through'),
+    "approach_lanes": ['left', 'through', 'right'],
+    "exit_lanes": ['through'],
 }]
 
 
@@ -105,28 +107,29 @@ def draw_lanes(road):
             pygame.draw.line(screen, LANE_LINE, (x, y), (x, y + length))
             pygame.draw.line(screen, LANE_LINE, (x + width, y),
                              (x + width, y + length))
-            draw_text(name, x + 10, start_y + 10, 90, WHITE)
+            draw_text(name, x + 12, start_y + 10, 90, ROAD_ACCENT)
             return (x + width, y)
         elif approach_direction == "south":
             # origin is bottom right
             pygame.draw.line(screen, LANE_LINE, (x, y), (x, y - length))
             pygame.draw.line(screen, LANE_LINE, (x - width, y),
                              (x - width, y - length))
-            draw_text(name, x - lane_width + 10, start_y - 10, 270, WHITE)
+            draw_text(name, x - lane_width + 12,
+                      start_y - 10, 270, ROAD_ACCENT)
             return (x - width, y)
         elif approach_direction == "east":
             # origin is top right
             pygame.draw.line(screen, LANE_LINE, (x, y), (x-length, y))
             pygame.draw.line(screen, LANE_LINE, (x, y+width),
                              (x-length, y+width))
-            draw_text(name, x - 10, y + 10, 0, WHITE)
+            draw_text(name, x - 10, y + 12, 0, ROAD_ACCENT)
             return (x, y+width)
         elif approach_direction == "west":
             # origin is bottom left
             pygame.draw.line(screen, LANE_LINE, (x, y), (x+length, y))
             pygame.draw.line(screen, LANE_LINE, (x, y-width),
                              (x + length, y - width))
-            draw_text(name, x + 10, y - lane_width + 10, 180, WHITE)
+            draw_text(name, x + 10, y - lane_width + 12, 180, ROAD_ACCENT)
             return (x, y-width)
         return (x, y)
 
