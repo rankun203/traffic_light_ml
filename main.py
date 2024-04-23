@@ -8,7 +8,7 @@ screen_width = 800
 screen_height = 600
 # put the window in the top left corner
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 0)
-pygame.display.set_caption('Traffic Conjunction')
+pygame.display.set_caption('Traffic Intersection Simulation')
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 # Initialize font
