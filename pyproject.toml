@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "traffic-light-ml"
+version = "0.1.0"
+description = ""
+authors = ["Kun Ran <rankun203@gmail.com>"]
+readme = "README.md"
+packages = [{include = "traffic_light_ml"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pygame = "^2.5.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
