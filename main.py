@@ -228,6 +228,14 @@ def main():
                 running = False
 
         draw_environment()
+        # TODO: get next cars state
+        # TODO: get next traffic lights state
+
+        # TODO: calculate next cars state
+        # TODO: RL, calculate next traffic lights state
+
+        # TODO: update cars state
+        # TODO: update traffic lights state
         pygame.display.update()
     pygame.quit()
     sys.exit()
