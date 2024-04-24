@@ -35,5 +35,4 @@ class Car:
             self.to_street = None  # leaves the simulation
             self.lane = random.choice(self.street.exit_lanes)
             self.lane.add_car(self)
-            print('[Car] lane:', self.lane, 'cars:', self.lane.cars)
             self.travel_distance = 0

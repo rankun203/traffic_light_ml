@@ -18,6 +18,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 # game variables
 FPS = 60
+SIMULATE_DURATION = 60  # in seconds
 clock = pygame.time.Clock()
 
 road_width = 200
@@ -75,16 +76,16 @@ roads_config = [
     ),
 ]
 
-cars_config = [{
-    "num_cars": 1000,
-}]
+cars_config = {
+    "num_cars": 100,
+}
 
 
 def main():
     running = True
     print('Rendering traffic conjunction...')
     environment = Environment(screen, roads_config)
-    traffic = Traffic(1, clock, roads_config, 1000)
+    traffic = Traffic(1, clock, roads_config, cars_config, SIMULATE_DURATION)
     while running:
         clock.tick(FPS)
 
@@ -92,6 +93,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+        if traffic.num_spawned_cars > 0 and len(traffic.all_cars) <= 0:
+            running = False
 
         environment.draw()
         traffic.next_tick()

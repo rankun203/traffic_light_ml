@@ -13,23 +13,25 @@ class Traffic:
         ('south', 'east'): 'right',
         ('south', 'west'): 'left',
         ('east', 'west'): 'through',
-        ('east', 'north'): 'left',
-        ('east', 'south'): 'right',
+        ('east', 'north'): 'right',
+        ('east', 'south'): 'left',
         ('west', 'east'): 'through',
-        ('west', 'north'): 'right',
-        ('west', 'south'): 'left'
+        ('west', 'north'): 'left',
+        ('west', 'south'): 'right'
     }
 
-    def __init__(self, time_scale: int, clock: time.Clock, streets: list[Street], num_cars=100) -> None:
+    def __init__(self, time_scale: int, clock: time.Clock, streets: list[Street], cars_config, simulation_duration) -> None:
         self.clock = clock
         self.time_scale = time_scale
         self.streets = streets
-        self.num_cars = num_cars
+        self.num_cars = cars_config["num_cars"]
+        self.num_spawned_cars = 0
+        self.simulation_duration = simulation_duration
         self.all_cars: list[Car] = []
-        self._spawn_car()
+        self.last_spawn_ms = 0
 
     def _spawn_car(self):
-        num_new_cars = 5
+        num_new_cars = 1
         # spawn cars on a random street and start at the beginning of the street
         num_car_generated = 0
         while num_car_generated < num_new_cars:
@@ -53,10 +55,20 @@ class Traffic:
             self.all_cars.append(car)
             current_lane.cars.append(car)
             num_car_generated += 1
+            self.last_spawn_ms = time.get_ticks()
+        self.num_spawned_cars += num_car_generated
 
     def next_tick(self):
         # don't know what this func is doing yet
         clock_ms = time.get_ticks()
+
+        # check if we need to spawn new cars
+        if self.num_spawned_cars < self.num_cars:
+            spawn_interval_ms = (
+                self.simulation_duration * 1000 // self.num_cars)
+            if clock_ms - self.last_spawn_ms >= spawn_interval_ms:
+                self._spawn_car()
+
         for car in self.all_cars:
             recycle_car = car.next_tick()
             if recycle_car:

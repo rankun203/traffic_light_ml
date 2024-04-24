@@ -12,8 +12,6 @@ class Lane:
         self.cars.append(car)
 
     def remove_car(self, car):
-        if car not in self.cars:
-            print('[Lane] lane:', self, 'lane cars:', self.cars, 'target', car)
         self.cars.remove(car)
 
     def get_cars(self):
