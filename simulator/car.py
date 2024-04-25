@@ -1,4 +1,5 @@
 from random import randint
+from typing import Optional
 from pygame import time
 import random
 
@@ -19,10 +20,39 @@ class Car:
         self.to_street = to_street
         self.travel_distance = 0  # travel unit, px for now
         self.width = 10  # car width
-        self.length = 20  # car length
+        self.length = random.randint(15, 25)  # car length
+        self.drive_config = {
+            "front": random.randint(8, 12),
+        }
 
     def next_tick(self):
+        if self.lane.light is not None and self.lane.light.color == "red" and self.travel_distance >= self.street.length:
+            # stop criteria: lane is red, travel distance is greater than street length
+            return
+
+        # detect distance from the car in front
+        front_car: Optional[Car] = None
+        for i, car in enumerate(self.lane.get_cars()):
+            if car == self:
+                if i == 0:
+                    front_car = None
+                else:
+                    front_car = self.lane.get_cars()[i - 1]
+
+        # avoid collision
+        if front_car:
+            front_car_tail_pos = front_car.travel_distance - front_car.length
+            distance_to_front_car = front_car_tail_pos - self.travel_distance
+            if distance_to_front_car < self.drive_config["front"]:
+                self.current_speed = 0
+            else:
+                self.current_speed = 1
+        else:
+            self.current_speed = 1
+
+        # forwards
         self.travel_distance += self.current_speed
+
         if self.travel_distance - self.length >= self.street.length:
             self.lane.remove_car(self)
 

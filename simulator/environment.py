@@ -8,16 +8,18 @@ pygame.font.init()
 
 class Environment:
     # colors
-    BLACK = (0, 0, 0)
-    WHITE = (255, 255, 255)
-    RED = (255, 0, 0)
-    GREEN = (0, 255, 0)
-    YELLOW = (255, 255, 0)
-    BACKGROUND = (68, 80, 99)
-    ROAD = (47, 52, 64)
-    ROAD_ACCENT = (98, 110, 129)
-    LANE_LINE = (255, 255, 255)
-    DIVIDER = (41, 96, 92)
+    COLORS = {
+        "BLACK": (0, 0, 0),
+        "WHITE": (255, 255, 255),
+        "RED": (255, 0, 0),
+        "GREEN": (0, 255, 0),
+        "YELLOW": (255, 255, 0),
+        "BACKGROUND": (68, 80, 99),
+        "ROAD": (47, 52, 64),
+        "ROAD_ACCENT": (98, 110, 129),
+        "LANE_LINE": (255, 255, 255),
+        "DIVIDER": (41, 96, 92),
+    }
 
     font_size = 16
     font_path = "./fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf"
@@ -25,12 +27,20 @@ class Environment:
 
     approach_width_ratio = 0.6
 
-    def __init__(self, screen, roads_config: list[Street]):
-        self._state = None
+    def __init__(self, screen: pygame.Surface, roads_config: list[Street]):
         self.screen = screen
         self.roads_config = roads_config
 
-    def _draw_text(self, text, x, y, rotate, color=WHITE):
+    def _draw_text(self, text, x, y, rotate, color=COLORS["WHITE"], h_center=False, v_center=False):
+        text_surface = self.lane_font.render(text, True, color)
+        rotated_text_surface = pygame.transform.rotate(text_surface, rotate)
+        if h_center:
+            x = x - rotated_text_surface.get_width() // 2
+        if v_center:
+            y = y - rotated_text_surface.get_height() // 2
+        self.screen.blit(rotated_text_surface, (x, y))
+
+    def _draw_lane_label(self, text, x, y, rotate, color=COLORS["WHITE"]):
         text_surface = self.lane_font.render(text, True, color)
         rotated_text_surface = pygame.transform.rotate(text_surface, rotate)
         if rotate == 0:
@@ -76,39 +86,61 @@ class Environment:
         """Must choose the right origin for x, y"""
         if approach_direction == "north":
             # origin is top left
-            pygame.draw.line(self.screen, self.LANE_LINE,
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
                              (x, y), (x, y + length))
-            pygame.draw.line(self.screen, self.LANE_LINE, (x + width, y),
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x + width, y),
                              (x + width, y + length))
-            self._draw_text(lane.to_direction, x + text_offset, y +
-                            10, 90, self.ROAD_ACCENT)
+            self._draw_lane_label(lane.to_direction, x + text_offset, y +
+                                  10, 90, self.COLORS["ROAD_ACCENT"])
+            # Draw traffic light
+            if lane.is_approach and lane.light:
+                lit_color = self.COLORS[lane.light.color.upper()]
+                pygame.draw.rect(self.screen, lit_color, (x, y-5, width, 5))
+
             return (x + width, y)
         elif approach_direction == "south":
             # origin is bottom right
-            pygame.draw.line(self.screen, self.LANE_LINE,
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
                              (x, y), (x, y - length))
-            pygame.draw.line(self.screen, self.LANE_LINE, (x - width, y),
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x - width, y),
                              (x - width, y - length))
-            self._draw_text(lane.to_direction, x - width + text_offset,
-                            y - 10, 270, self.ROAD_ACCENT)
+            self._draw_lane_label(lane.to_direction, x - width + text_offset,
+                                  y - 10, 270, self.COLORS["ROAD_ACCENT"])
+            # Draw traffic light
+            if lane.is_approach and lane.light:
+                lit_color = self.COLORS[lane.light.color.upper()]
+                pygame.draw.rect(self.screen, lit_color,
+                                 (x-width+1, y, width, 5))
+
             return (x - width, y)
         elif approach_direction == "east":
             # origin is top right
-            pygame.draw.line(self.screen, self.LANE_LINE,
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
                              (x, y), (x-length, y))
-            pygame.draw.line(self.screen, self.LANE_LINE, (x, y+width),
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y+width),
                              (x-length, y+width))
-            self._draw_text(lane.to_direction, x - 10, y +
-                            text_offset, 0, self.ROAD_ACCENT)
+            self._draw_lane_label(lane.to_direction, x - 10, y +
+                                  text_offset, 0, self.COLORS["ROAD_ACCENT"])
+            # Draw traffic light
+            if lane.is_approach and lane.light:
+                lit_color = self.COLORS[lane.light.color.upper()]
+                pygame.draw.rect(self.screen, lit_color, (x, y+1, 5, width))
+
             return (x, y+width)
         elif approach_direction == "west":
             # origin is bottom left
-            pygame.draw.line(self.screen, self.LANE_LINE,
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
                              (x, y), (x+length, y))
-            pygame.draw.line(self.screen, self.LANE_LINE, (x, y-width),
+            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y-width),
                              (x + length, y - width))
-            self._draw_text(lane.to_direction, x + 10, y - width +
-                            text_offset, 180, self.ROAD_ACCENT)
+            self._draw_lane_label(lane.to_direction, x + 10, y - width +
+                                  text_offset, 180, self.COLORS["ROAD_ACCENT"])
+            # Draw traffic light
+            if lane.is_approach and lane.light:
+                lit_color = self.COLORS[lane.light.color.upper()]
+                pygame.draw.rect(self.screen, lit_color,
+                                 (x-5, y-width, 5, width))
+
             return (x, y-width)
         return (x, y)
 
@@ -137,11 +169,11 @@ class Environment:
             # draw left to right
             start_x = st.x
             start_y = st.y
-            # draw lanes lines
+            # draw approaching lanes lines
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.DIVIDER, (start_x + 1, start_y,
+            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x + 1, start_y,
                              st.divider_width - 1, st.length))
             start_x += st.divider_width
             # draw exit lanes
@@ -152,11 +184,11 @@ class Environment:
             # draw right to left
             start_x = st.x + st.width
             start_y = st.y + st.length
-            # draw lanes lines
+            # draw approaching lanes lines
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.DIVIDER, (start_x -
+            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x -
                              st.divider_width, start_y - st.length, st.divider_width, st.length))
             start_x -= st.divider_width
             start_x, start_y = _draw_lanes_inner(
@@ -166,12 +198,12 @@ class Environment:
             # draw top to bottom
             start_x = st.x + st.length
             start_y = st.y
-            # draw lanes lines
+            # draw approaching lanes lines
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.DIVIDER, (start_x - st.length, start_y + 1,
-                                                         st.length, st.divider_width - 1))
+            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x - st.length, start_y + 1,
+                                                                   st.length, st.divider_width - 1))
             start_y += st.divider_width
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, exit_lane_width, st.exit_lanes)
@@ -180,12 +212,12 @@ class Environment:
             # draw bottom to top
             start_x = st.x
             start_y = st.y + st.width
-            # draw lanes lines
+            # draw approaching lanes lines
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.DIVIDER, (start_x, start_y - st.divider_width + 1,
-                                                         st.length, st.divider_width - 1))
+            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x, start_y - st.divider_width + 1,
+                                                                   st.length, st.divider_width - 1))
             start_y -= st.divider_width
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, exit_lane_width, st.exit_lanes)
@@ -194,12 +226,29 @@ class Environment:
         for st in self.roads_config:
             if st.approach_direction in ["north", "south"]:
                 pygame.draw.rect(
-                    self.screen, self.ROAD, (st.x, st.y, st.width, st.length))
+                    self.screen, self.COLORS["ROAD"], (st.x, st.y, st.width, st.length))
             else:
                 pygame.draw.rect(
-                    self.screen, self.ROAD, (st.x, st.y, st.length, st.width))
+                    self.screen, self.COLORS["ROAD"], (st.x, st.y, st.length, st.width))
             self._draw_lanes(st)
 
+    def _draw_timer(self):
+        # draw elapsed time
+        clock_ms = pygame.time.get_ticks()
+        self._draw_text(f"{clock_ms//1000}", 10, 2, 0, self.COLORS["WHITE"])
+
+    def draw_dialog(self, text: str):
+        width, height = self.screen.get_width(), self.screen.get_height()
+        dialog_h = 100
+
+        dialog_y = (height // 2) - (dialog_h // 2)
+        print("Draw dialog", text)
+        pygame.draw.rect(
+            self.screen, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
+        self._draw_text(text, width // 2, dialog_y + dialog_h //
+                        2, 0, self.COLORS["BLACK"], h_center=True, v_center=True)
+
     def draw(self):
-        self.screen.fill(self.BACKGROUND)
+        self.screen.fill(self.COLORS["BACKGROUND"])
         self._draw_streets()
+        self._draw_timer()

@@ -20,8 +20,7 @@ class Traffic:
         ('west', 'south'): 'right'
     }
 
-    def __init__(self, time_scale: int, clock: time.Clock, streets: list[Street], cars_config, simulation_duration) -> None:
-        self.clock = clock
+    def __init__(self, time_scale: int, streets: list[Street], cars_config, simulation_duration) -> None:
         self.time_scale = time_scale
         self.streets = streets
         self.num_cars = cars_config["num_cars"]

@@ -3,6 +3,8 @@ import os
 import sys
 
 from simulator.environment import Environment
+from simulator.lights_control.static import Phase, StaticLightsControl
+from simulator.lights_control.light import Light
 from simulator.street import Lane, Street
 from simulator.traffic import Traffic
 
@@ -22,6 +24,30 @@ SIMULATE_DURATION = 60  # in seconds
 clock = pygame.time.Clock()
 
 road_width = 200
+
+# traffic lights
+lit_north_through = Light()
+lit_north_left = lit_north_through
+lit_north_right = Light()
+lit_south_through = Light()
+lit_south_left = lit_south_through
+lit_south_right = Light()
+lit_west_through = Light()
+lit_west_left = lit_west_through
+lit_west_right = Light()
+lit_east_through = Light()
+lit_east_left = lit_east_through
+lit_east_right = Light()
+
+# traffic lights phases
+lights_phases_config = [
+    Phase([lit_north_through, lit_north_left,
+          lit_south_through, lit_south_left], 10),
+    Phase([lit_north_right, lit_south_right], 5),
+    Phase([lit_west_through, lit_west_left, lit_east_through, lit_east_left], 10),
+    Phase([lit_west_right, lit_east_right], 5)
+]
+
 roads_config = [
     Street(
         name="Lygon Street",
@@ -31,7 +57,9 @@ roads_config = [
         divider_width=20,
         approach_direction="south",
         approach_lanes=[
-            Lane(True, 'left'), Lane(True, 'through'), Lane(True, 'right')
+            Lane(True, 'left', lit_south_left),
+            Lane(True, 'through', lit_south_through),
+            Lane(True, 'right', lit_south_right)
         ],
         exit_lanes=[Lane(False, 'through')]
     ),
@@ -44,7 +72,9 @@ roads_config = [
         divider_width=20,
         approach_direction="east",
         approach_lanes=[
-            Lane(True, 'left'), Lane(True, 'through'), Lane(True, 'right')
+            Lane(True, 'left', lit_east_left),
+            Lane(True, 'through', lit_east_through),
+            Lane(True, 'right', lit_east_right)
         ],
         exit_lanes=[Lane(False, 'through')],
     ),
@@ -57,7 +87,9 @@ roads_config = [
         divider_width=20,
         approach_direction="west",
         approach_lanes=[
-            Lane(True, 'left'), Lane(True, 'through'), Lane(True, 'right')
+            Lane(True, 'left', lit_west_left),
+            Lane(True, 'through', lit_west_through),
+            Lane(True, 'right', lit_west_right)
         ],
         exit_lanes=[Lane(False, 'through')],
     ),
@@ -70,7 +102,9 @@ roads_config = [
         divider_width=20,
         approach_direction="north",
         approach_lanes=[
-            Lane(True, 'left'), Lane(True, 'through'), Lane(True, 'right')
+            Lane(True, 'left', lit_north_left),
+            Lane(True, 'through', lit_north_through),
+            Lane(True, 'right', lit_north_right)
         ],
         exit_lanes=[Lane(False, 'through')],
     ),
@@ -84,8 +118,9 @@ cars_config = {
 def main():
     running = True
     print('Rendering traffic conjunction...')
+    lights_control = StaticLightsControl(lights_phases_config)
+    traffic = Traffic(1, roads_config, cars_config, SIMULATE_DURATION)
     environment = Environment(screen, roads_config)
-    traffic = Traffic(1, clock, roads_config, cars_config, SIMULATE_DURATION)
     while running:
         clock.tick(FPS)
 
@@ -93,11 +128,15 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        if traffic.num_spawned_cars > 0 and len(traffic.all_cars) <= 0:
-            running = False
 
-        environment.draw()
+        lights_control.next_tick()
         traffic.next_tick()
+        environment.draw()
+
+        # dialog
+        if traffic.num_spawned_cars > 0 and len(traffic.all_cars) <= 0:
+            environment.draw_dialog("All cars left")
+
         # TODO: get next cars state
         # TODO: get next traffic lights state
 

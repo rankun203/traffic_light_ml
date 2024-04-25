@@ -1,11 +1,14 @@
+from typing import Optional
 from simulator.car import Car
+from simulator.lights_control.light import Light
 
 
 class Lane:
-    def __init__(self, is_approach, to_direction):
+    def __init__(self, is_approach, to_direction, light: Optional[Light] = None):
         self.is_approach = is_approach
         # left, through, right
         self.to_direction = to_direction
+        self.light = light
         self.cars: list[Car] = []
 
     def add_car(self, car):
@@ -30,7 +33,7 @@ class Street:
         self.width = width
         self.length = length
         self.divider_width = divider_width
-        self.approach_direction = approach_direction
+        self.approach_direction = approach_direction  # north, south, east, west
         self.approach_lanes: list[Lane] = approach_lanes
         self.exit_lanes: list[Lane] = exit_lanes
 
