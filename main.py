@@ -5,7 +5,7 @@ import sys
 from simulator.environment import Environment
 from simulator.lights_control.static import Phase, StaticLightsControl
 from simulator.lights_control.light import Light
-from simulator.street import Lane, Street
+from simulator.street import Intersection, Lane, Street
 from simulator.traffic import Traffic
 
 pygame.init()
@@ -48,6 +48,22 @@ lights_phases_config = [
     Phase([lit_west_right, lit_east_right], 5)
 ]
 
+
+# intersections for each lane
+intsec_north_left = Intersection()
+intsec_north_through = Intersection()
+intsec_north_right = Intersection()
+intsec_south_left = Intersection()
+intsec_south_through = Intersection()
+intsec_south_right = Intersection()
+intsec_west_left = Intersection()
+intsec_west_through = Intersection()
+intsec_west_right = Intersection()
+intsec_east_left = Intersection()
+intsec_east_through = Intersection()
+intsec_east_right = Intersection()
+
+
 roads_config = [
     Street(
         name="Lygon Street",
@@ -57,11 +73,13 @@ roads_config = [
         divider_width=20,
         approach_direction="south",
         approach_lanes=[
-            Lane(True, 'left', lit_south_left),
-            Lane(True, 'through', lit_south_through),
-            Lane(True, 'right', lit_south_right)
+            Lane(True, 'left', lit_south_left, to_intsec=intsec_south_left),
+            Lane(True, 'through', lit_south_through,
+                 to_intsec=intsec_south_through),
+            Lane(True, 'right', lit_south_right, to_intsec=intsec_south_right)
         ],
-        exit_lanes=[Lane(False, 'through')]
+        exit_lanes=[Lane(False, 'through', from_intsecs=[intsec_north_through, intsec_west_right]),
+                    Lane(False, 'through', from_intsecs=[intsec_east_left])],
     ),
     Street(
         name="Victoria Street",
@@ -72,11 +90,13 @@ roads_config = [
         divider_width=20,
         approach_direction="east",
         approach_lanes=[
-            Lane(True, 'left', lit_east_left),
-            Lane(True, 'through', lit_east_through),
-            Lane(True, 'right', lit_east_right)
+            Lane(True, 'left', lit_east_left, to_intsec=intsec_east_left),
+            Lane(True, 'through', lit_east_through,
+                 to_intsec=intsec_east_through),
+            Lane(True, 'right', lit_east_right, to_intsec=intsec_east_right)
         ],
-        exit_lanes=[Lane(False, 'through')],
+        exit_lanes=[Lane(False, 'through', from_intsecs=[intsec_west_through, intsec_south_right]),
+                    Lane(False, 'through', from_intsecs=[intsec_north_left])],
     ),
     Street(
         name="Victoria Street",
@@ -87,11 +107,13 @@ roads_config = [
         divider_width=20,
         approach_direction="west",
         approach_lanes=[
-            Lane(True, 'left', lit_west_left),
-            Lane(True, 'through', lit_west_through),
-            Lane(True, 'right', lit_west_right)
+            Lane(True, 'left', lit_west_left, to_intsec=intsec_west_left),
+            Lane(True, 'through', lit_west_through,
+                 to_intsec=intsec_west_through),
+            Lane(True, 'right', lit_west_right, to_intsec=intsec_west_right)
         ],
-        exit_lanes=[Lane(False, 'through')],
+        exit_lanes=[Lane(False, 'through', from_intsecs=[intsec_east_through, intsec_north_right]),
+                    Lane(False, 'through', from_intsecs=[intsec_south_left])],
     ),
     Street(
         name="Russell Street",
@@ -102,11 +124,13 @@ roads_config = [
         divider_width=20,
         approach_direction="north",
         approach_lanes=[
-            Lane(True, 'left', lit_north_left),
-            Lane(True, 'through', lit_north_through),
-            Lane(True, 'right', lit_north_right)
+            Lane(True, 'left', lit_north_left, to_intsec=intsec_north_left),
+            Lane(True, 'through', lit_north_through,
+                 to_intsec=intsec_north_through),
+            Lane(True, 'right', lit_north_right, to_intsec=intsec_north_right)
         ],
-        exit_lanes=[Lane(False, 'through')],
+        exit_lanes=[Lane(False, 'through', from_intsecs=[intsec_south_through, intsec_east_right]),
+                    Lane(False, 'through', from_intsecs=[intsec_west_left])],
     ),
 ]
 
@@ -131,20 +155,12 @@ def main():
 
         lights_control.next_tick()
         traffic.next_tick()
-        environment.draw()
+        environment.next_tick()
 
         # dialog
         if traffic.num_spawned_cars > 0 and len(traffic.all_cars) <= 0:
             environment.draw_dialog("All cars left")
 
-        # TODO: get next cars state
-        # TODO: get next traffic lights state
-
-        # TODO: calculate next cars state
-        # TODO: RL, calculate next traffic lights state
-
-        # TODO: update cars state
-        # TODO: update traffic lights state
         pygame.display.update()
     pygame.quit()
     sys.exit()

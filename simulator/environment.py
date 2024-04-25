@@ -1,4 +1,5 @@
 import pygame
+import math
 
 from simulator.street import Lane, Street
 
@@ -15,6 +16,7 @@ class Environment:
         "GREEN": (0, 255, 0),
         "YELLOW": (255, 255, 0),
         "BACKGROUND": (68, 80, 99),
+        "BACKGROUND_ACCENT": (41, 96, 92),
         "ROAD": (47, 52, 64),
         "ROAD_ACCENT": (98, 110, 129),
         "LANE_LINE": (255, 255, 255),
@@ -90,6 +92,7 @@ class Environment:
                              (x, y), (x, y + length))
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x + width, y),
                              (x + width, y + length))
+            lane.set_geo(int(x), int(y), int(x+width), int(y), width, length)
             self._draw_lane_label(lane.to_direction, x + text_offset, y +
                                   10, 90, self.COLORS["ROAD_ACCENT"])
             # Draw traffic light
@@ -104,6 +107,7 @@ class Environment:
                              (x, y), (x, y - length))
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x - width, y),
                              (x - width, y - length))
+            lane.set_geo(int(x), int(y), int(x-width), int(y), width, length)
             self._draw_lane_label(lane.to_direction, x - width + text_offset,
                                   y - 10, 270, self.COLORS["ROAD_ACCENT"])
             # Draw traffic light
@@ -119,6 +123,7 @@ class Environment:
                              (x, y), (x-length, y))
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y+width),
                              (x-length, y+width))
+            lane.set_geo(int(x), int(y), int(x), int(y+width), width, length)
             self._draw_lane_label(lane.to_direction, x - 10, y +
                                   text_offset, 0, self.COLORS["ROAD_ACCENT"])
             # Draw traffic light
@@ -133,6 +138,7 @@ class Environment:
                              (x, y), (x+length, y))
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y-width),
                              (x + length, y - width))
+            lane.set_geo(int(x), int(y), int(x), int(y-width), width, length)
             self._draw_lane_label(lane.to_direction, x + 10, y - width +
                                   text_offset, 180, self.COLORS["ROAD_ACCENT"])
             # Draw traffic light
@@ -232,6 +238,57 @@ class Environment:
                     self.screen, self.COLORS["ROAD"], (st.x, st.y, st.length, st.width))
             self._draw_lanes(st)
 
+    def _draw_intersections(self):
+        for st in self.roads_config:
+            for lane in st.approach_lanes:
+                if lane.light and lane.light.color == 'red':
+                    continue
+                if lane.to_intsec is not None and lane.to_intsec.to_lane is not None:
+                    to_lane = lane.to_intsec.to_lane
+                    # draw a line from lane.x, lane.y to to_lane.x, to_lane.y
+                    if lane.to_direction == 'left':
+                        pass
+                        # pygame.draw.line(self.screen, self.COLORS["BACKGROUND_ACCENT"], (
+                        #     lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
+                    elif lane.to_direction == 'through':
+                        pygame.draw.line(self.screen, self.COLORS["WHITE"], (
+                            lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
+                    elif lane.to_direction == 'right':
+                        x, y = lane.right_x, to_lane.left_y
+                        sa, ea = 90, 180
+                        if lane.street.approach_direction == 'north':
+                            x, y = lane.right_x, to_lane.left_y
+                            sa, ea = 90, 180
+                        elif lane.street.approach_direction == 'south':
+                            x = to_lane.left_x - lane.right_x + to_lane.left_x
+                            y = lane.right_y - to_lane.left_y + lane.right_y
+                            sa, ea = 270, 0
+                        elif lane.street.approach_direction == 'east':
+                            x = lane.right_x - to_lane.left_x + lane.right_x
+                            y = lane.right_y
+                            sa, ea = 0, 90
+                        elif lane.street.approach_direction == 'west':
+                            x = to_lane.left_x
+                            y = to_lane.left_y - lane.right_y + to_lane.left_y
+                            sa, ea = 180, 270
+
+                        # Define the bounding rectangle for the arc
+                        arc_rect = pygame.Rect(
+                            x, y,
+                            abs(to_lane.left_x - lane.right_x) * 2,
+                            abs(to_lane.left_y - lane.right_y) * 2
+                        )
+                        self.screen.set_at((x, y), self.COLORS["RED"])
+
+                        start_angle = math.radians(sa)
+                        end_angle = math.radians(ea)
+                        pygame.draw.arc(
+                            self.screen, self.COLORS["WHITE"], arc_rect, start_angle, end_angle)
+
+                        # pygame.draw.line(self.screen, self.COLORS["WHITE"], (
+                        #     lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
+                    print('intersection', lane, to_lane)
+
     def _draw_timer(self):
         # draw elapsed time
         clock_ms = pygame.time.get_ticks()
@@ -242,13 +299,14 @@ class Environment:
         dialog_h = 100
 
         dialog_y = (height // 2) - (dialog_h // 2)
-        print("Draw dialog", text)
+        print("Draw dialog", text, pygame.time.get_ticks())
         pygame.draw.rect(
             self.screen, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
         self._draw_text(text, width // 2, dialog_y + dialog_h //
                         2, 0, self.COLORS["BLACK"], h_center=True, v_center=True)
 
-    def draw(self):
+    def next_tick(self):
         self.screen.fill(self.COLORS["BACKGROUND"])
         self._draw_streets()
+        self._draw_intersections()
         self._draw_timer()

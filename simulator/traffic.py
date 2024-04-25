@@ -49,8 +49,9 @@ class Traffic:
                 [lane for lane in street.approach_lanes if lane.to_direction ==
                     Traffic.turn_directions[turn]]
             )
+            to_intsec = current_lane.to_intsec
 
-            car = Car(street, current_lane, to_street)
+            car = Car(street, current_lane, to_street, to_intsec)
             self.all_cars.append(car)
             current_lane.cars.append(car)
             num_car_generated += 1
