@@ -350,7 +350,12 @@ class Environment:
     def _draw_timer(self):
         # draw elapsed time
         clock_ms = pygame.time.get_ticks()
-        self._draw_text(f"{clock_ms//1000}", 10, 2, 0, self.COLORS["WHITE"])
+        self._draw_text(f"World time: {clock_ms//1000}s", 10, 8, 0, self.COLORS["WHITE"])
+
+    def draw_countdown(self, count: str):
+        width, height = self.screen.get_width(), self.screen.get_height()
+        self._draw_text(f"Count down: {count}",
+                        10, 40, 0, self.COLORS["WHITE"])
 
     def draw_dialog(self, text: str):
         width, height = self.screen.get_width(), self.screen.get_height()

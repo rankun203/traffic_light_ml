@@ -1,3 +1,4 @@
+import math
 from pygame import time
 
 
@@ -30,3 +31,5 @@ class StaticLightsControl:
             if phase != current_phase:
                 for light in phase.lights:
                     light.set_red()
+        phase_remain_s = math.ceil(current_phase.duration_s - phase_ms / 1000)
+        return phase_remain_s
