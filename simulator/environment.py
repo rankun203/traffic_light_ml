@@ -24,6 +24,16 @@ class Environment:
         "DIVIDER": (41, 96, 92),
     }
 
+    signs = {
+        "left_right": pygame.image.load('./icons/png/sign_left_right.png'),
+        "left_through_right": pygame.image.load('./icons/png/sign_through_right.png'),
+        "left_through": pygame.image.load('./icons/png/sign_left_through.png'),
+        "left": pygame.image.load('./icons/png/sign_left.png'),
+        "right": pygame.image.load('./icons/png/sign_right.png'),
+        "through_right": pygame.image.load('./icons/png/sign_through_right.png'),
+        "through": pygame.image.load('./icons/png/sign_through.png'),
+    }
+
     font_size = 16
     font_path = "./fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf"
     lane_font = pygame.font.Font(font_path, font_size)  # Using a default font
@@ -43,13 +53,14 @@ class Environment:
             y = y - rotated_text_surface.get_height() // 2
         self.screen.blit(rotated_text_surface, (x, y))
 
-    def _draw_lane_label(self, text, x, y, rotate, color=COLORS["WHITE"]):
-        text_surface = self.lane_font.render(text, True, color)
+    def _draw_lane_label(self, to_direction, x, y, rotate, color=COLORS["WHITE"]):
+        text_surface = self.signs[to_direction]
+        # self.screen.blit(self.signs["left"], (x, y))
         rotated_text_surface = pygame.transform.rotate(text_surface, rotate)
-        if rotate == 0:
-            x = x - rotated_text_surface.get_width()
-        elif rotate == 270:
-            y = y - rotated_text_surface.get_height()
+        # if rotate == 0:
+        #     x = x - rotated_text_surface.get_width()
+        # elif rotate == 270:
+        #     y = y - rotated_text_surface.get_height()
         self.screen.blit(rotated_text_surface, (x, y))
 
     def _draw_car(self, car: Car):
@@ -91,7 +102,7 @@ class Environment:
             self._draw_car(car)
 
     def _draw_lane(self, lane: Lane, x, y, width, length, approach_direction):
-        text_offset = width // 2 - 10
+        label_offset = width // 2 - 8
         """Must choose the right origin for x, y"""
         if approach_direction == "north":
             # origin is top left
@@ -100,8 +111,10 @@ class Environment:
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x + width, y),
                              (x + width, y + length))
             lane.set_geo(int(x), int(y), int(x+width), int(y), width, length)
-            self._draw_lane_label(lane.to_direction, x + text_offset, y +
-                                  10, 90, self.COLORS["ROAD_ACCENT"])
+            if lane.is_approach:
+                self._draw_lane_label(lane.to_direction, x + label_offset, y +
+                                      10, 0, self.COLORS["ROAD_ACCENT"])
+            # self._draw_sign(approach_direction, lane.to_direction, x, y)
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
@@ -115,8 +128,10 @@ class Environment:
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x - width, y),
                              (x - width, y - length))
             lane.set_geo(int(x), int(y), int(x-width), int(y), width, length)
-            self._draw_lane_label(lane.to_direction, x - width + text_offset,
-                                  y - 10, 270, self.COLORS["ROAD_ACCENT"])
+            if lane.is_approach:
+                self._draw_lane_label(lane.to_direction, x - width + label_offset,
+                                      y - 45, 180, self.COLORS["ROAD_ACCENT"])
+            # self._draw_sign(approach_direction, lane.to_direction, x, y)
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
@@ -131,8 +146,10 @@ class Environment:
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y+width),
                              (x-length, y+width))
             lane.set_geo(int(x), int(y), int(x), int(y+width), width, length)
-            self._draw_lane_label(lane.to_direction, x - 10, y +
-                                  text_offset, 0, self.COLORS["ROAD_ACCENT"])
+            if lane.is_approach:
+                self._draw_lane_label(lane.to_direction, x - 45, y +
+                                      label_offset, 270, self.COLORS["ROAD_ACCENT"])
+            # self._draw_sign(approach_direction, lane.to_direction, x, y)
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
@@ -146,8 +163,10 @@ class Environment:
             pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y-width),
                              (x + length, y - width))
             lane.set_geo(int(x), int(y), int(x), int(y-width), width, length)
-            self._draw_lane_label(lane.to_direction, x + 10, y - width +
-                                  text_offset, 180, self.COLORS["ROAD_ACCENT"])
+            if lane.is_approach:
+                self._draw_lane_label(lane.to_direction, x + 10, y - width +
+                                      label_offset, 90, self.COLORS["ROAD_ACCENT"])
+            # self._draw_sign(approach_direction, lane.to_direction, x, y)
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
