@@ -2,17 +2,20 @@ from random import randint
 from typing import Optional
 import random
 
+from pygame.time import Clock
+
 
 class Car:
     # static Counter
     CAR_ID_COUNTER = 0
 
-    def __init__(self, street, lane, to_street, to_intsec) -> None:
+    def __init__(self, street, lane, to_street, to_intsec, game_config, init_speed=1) -> None:
         self.id = Car.CAR_ID_COUNTER
         Car.CAR_ID_COUNTER += 1
         # assign a random color to each car
         self.color = (randint(100, 200), randint(100, 200), randint(100, 200))
-        self.current_speed = 1  # px per second
+        self.init_speed = init_speed
+        self.current_speed = self.init_speed  # px per second
         self.street = street
         self.lane = lane
         self.to_street = to_street
@@ -24,6 +27,15 @@ class Car:
         self.drive_config = {
             "front": random.randint(8, 12),
         }
+        self.game_config = game_config
+
+    def reset_travel_distance(self):
+        self.travel_distance = 0
+
+    def set_geo(self, x, y, rotate=0):
+        self.x = x
+        self.y = y
+        self.rotate = rotate
 
     def next_tick(self):
         if self.street is not None:
@@ -47,15 +59,16 @@ class Car:
             if distance_to_front_car < self.drive_config["front"]:
                 self.current_speed = 0
             else:
-                self.current_speed = 1
+                self.current_speed = self.init_speed
         else:
-            self.current_speed = 1
+            self.current_speed = self.init_speed
 
         # forwards
-        self.travel_distance += self.current_speed
+        elapsed_time_s = 1/self.game_config["FPS"]
+        self.travel_distance += self.current_speed * elapsed_time_s
 
-        if self.in_intersection:
-            # in intersection
+        if self.in_intersection and self.travel_distance + self.length >= self.to_intsec.length:
+            # leaving intersection
             if self.to_street is None:
                 raise ValueError("Car should have to_street at this point")
 
@@ -66,27 +79,26 @@ class Car:
             # 4. move car to next street
 
             self.in_intersection = False
+            self.to_intsec.remove_car(self)
 
             # move car to next street
             self.street = self.to_street
             self.to_street = None  # leaves the simulation
             self.lane = self.to_intsec.to_lane
             self.lane.add_car(self)
-            self.travel_distance = 0
+            self.reset_travel_distance()
 
-        else:
-            if not self.street:
-                raise ValueError("Car should be on street")
-            # on street
-            if self.travel_distance - self.length >= self.street.length:
-                self.lane.remove_car(self)
+        if self.street is not None and self.travel_distance - self.length >= self.street.length:
+            # leaving street
+            self.lane.remove_car(self)
 
-                if self.to_street is None:
-                    # this car is out of the simulation
-                    recycle_car = True
-                    return recycle_car
+            if self.to_street is None:
+                # this car is out of the simulation
+                recycle_car = True
+                return recycle_car
 
-                # move to intersection
-                self.in_intersection = True
-                self.street = None
-                self.travel_distance = 0
+            # move to intersection
+            self.in_intersection = True
+            self.to_intsec.add_car(self)
+            self.street = None
+            self.reset_travel_distance()

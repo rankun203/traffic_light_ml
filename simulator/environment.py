@@ -1,7 +1,8 @@
 import pygame
 import math
+from simulator.car import Car
 
-from simulator.street import Lane, Street
+from simulator.street import Intersection, Lane, Street
 
 # Initialize font
 pygame.font.init()
@@ -51,6 +52,15 @@ class Environment:
             y = y - rotated_text_surface.get_height()
         self.screen.blit(rotated_text_surface, (x, y))
 
+    def _draw_car(self, car: Car):
+        car_surface = pygame.Surface((car.width, car.length), pygame.SRCALPHA)
+        pygame.draw.rect(car_surface, car.color, car_surface.get_rect())
+        rotated_car_surface = pygame.transform.rotate(car_surface, car.rotate)
+        rotated_rect = rotated_car_surface.get_rect(center=(car.x, car.y))
+
+        # Blit the rotated car surface onto the screen at the position of the rotated rect
+        self.screen.blit(rotated_car_surface, rotated_rect.center)
+
     def _draw_cars_on_lane(self, lane: Lane, x, y, width, length, approach_direction):
         for car in lane.cars:
             # calculate car position
@@ -59,29 +69,26 @@ class Environment:
                 car_y = y + length - car.travel_distance
                 if not lane.is_approach:
                     car_y = y + car.travel_distance - car.length
-                pygame.draw.rect(self.screen, car.color, (car_x,
-                                 car_y, car.width, car.length))
+                car.set_geo(car_x, car_y, 0)
             elif approach_direction == "south":
                 car_x = x - width // 2 - 5
                 car_y = y - length + car.travel_distance - car.length
                 if not lane.is_approach:
                     car_y = y - car.travel_distance
-                pygame.draw.rect(self.screen, car.color, (car_x,
-                                 car_y, car.width, car.length))
+                car.set_geo(car_x, car_y, 0)
             elif approach_direction == "east":
                 car_x = x - length + car.travel_distance - car.length
                 car_y = y + width // 2 - 5
                 if not lane.is_approach:
                     car_x = x - car.travel_distance
-                pygame.draw.rect(self.screen, car.color, (car_x,
-                                 car_y, car.length, car.width))
+                car.set_geo(car_x, car_y, 90)
             elif approach_direction == "west":
                 car_x = x + length - car.travel_distance
                 car_y = y - width // 2 - 5
                 if not lane.is_approach:
                     car_x = x + car.travel_distance - car.length
-                pygame.draw.rect(self.screen, car.color, (car_x,
-                                 car_y, car.length, car.width))
+                car.set_geo(car_x, car_y, 90)
+            self._draw_car(car)
 
     def _draw_lane(self, lane: Lane, x, y, width, length, approach_direction):
         text_offset = width // 2 - 10
@@ -167,8 +174,9 @@ class Environment:
                 old_x, old_y = start_x, start_y
                 start_x, start_y = self._draw_lane(
                     lane, start_x, start_y, width, st.length, st.approach_direction)
-                self._draw_cars_on_lane(lane, old_x, old_y, width, st.length,
-                                        st.approach_direction)
+                if len(lane.cars) > 0:
+                    self._draw_cars_on_lane(lane, old_x, old_y, width, st.length,
+                                            st.approach_direction)
             return start_x, start_y
 
         if st.approach_direction == "north":
@@ -238,6 +246,9 @@ class Environment:
                     self.screen, self.COLORS["ROAD"], (st.x, st.y, st.length, st.width))
             self._draw_lanes(st)
 
+    def point_at_percentage(self, ax: int, ay: int, bx: int, by: int, t: float):
+        return (ax + t * (bx - ax), ay + t * (by - ay))
+
     def _draw_intersections(self):
         for st in self.roads_config:
             for lane in st.approach_lanes:
@@ -253,6 +264,34 @@ class Environment:
                     elif lane.to_direction == 'through':
                         pygame.draw.line(self.screen, self.COLORS["WHITE"], (
                             lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
+                        lane.to_intsec.set_length(int(math.sqrt(
+                            (lane.right_x - to_lane.left_x)**2 + (lane.right_y - to_lane.left_y)**2)))
+                        for car in lane.to_intsec.cars:
+                            car_per = car.travel_distance / lane.to_intsec.length
+                            x, y = self.point_at_percentage(
+                                lane.right_x, lane.right_y, to_lane.left_x, to_lane.left_y, car_per)
+                            di = lane.street.approach_direction
+                            x_offset = 0
+                            y_offset = 0
+                            rot = 0
+                            if di == 'north':
+                                x_offset = -1 * \
+                                    (lane.width // 2 + car.width // 2)
+                                y_offset = -1 * car.length
+                                rot = 0
+                            elif di == 'west':
+                                x_offset = -1 * car.length
+                                y_offset = lane.width // 2 - car.width // 2
+                                rot = 90
+                            elif di == 'south':
+                                x_offset = lane.width // 2 - car.width // 2
+                                rot = 0
+                            elif di == 'east':
+                                y_offset = -1*(lane.width // 2 + car.width//2)
+                                rot = 90
+
+                            car.set_geo(x + x_offset, y + y_offset, rot)
+                            self._draw_car(car)
                     elif lane.to_direction == 'right':
                         x, y = lane.right_x, to_lane.left_y
                         sa, ea = 90, 180
@@ -278,16 +317,48 @@ class Environment:
                             abs(to_lane.left_x - lane.right_x) * 2,
                             abs(to_lane.left_y - lane.right_y) * 2
                         )
-                        self.screen.set_at((x, y), self.COLORS["RED"])
+                        xc, yc = arc_rect.center
 
                         start_angle = math.radians(sa)
                         end_angle = math.radians(ea)
+                        angle_diff = start_angle - end_angle
                         pygame.draw.arc(
                             self.screen, self.COLORS["WHITE"], arc_rect, start_angle, end_angle)
 
-                        # pygame.draw.line(self.screen, self.COLORS["WHITE"], (
-                        #     lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
-                    print('intersection', lane, to_lane)
+                        # calculate arc distance
+                        radius = abs(to_lane.left_x - lane.right_x)
+                        angle_diff = abs(end_angle - start_angle)
+                        arc_distance = radius * angle_diff
+                        lane.to_intsec.set_length(arc_distance)
+
+                        radius = abs(to_lane.left_x - lane.right_x)
+
+                        for car in lane.to_intsec.cars:
+                            pre = car.travel_distance / arc_distance
+                            target_angle = 90 + start_angle + pre * angle_diff
+                            print(
+                                f'target_angle: {target_angle:.2f}, x_center: {xc}, y_center: {yc}')
+                            rot = int(180-90*pre)
+                            car_x = xc + radius * math.cos(target_angle)
+                            car_y = yc + radius * math.sin(target_angle)
+
+                            di = lane.street.approach_direction
+                            x_offset = 0
+                            y_offset = 0
+                            if di == 'north':
+                                x_offset = -1 * (lane.width // 2 + car.width // 2)
+                                y_offset = -1 * car.length
+                            elif di == 'west':
+                                x_offset = -1 * car.length
+                                y_offset = lane.width // 2 - car.width // 2
+                            elif di == 'south':
+                                x_offset = lane.width // 2 - car.width // 2
+                            elif di == 'east':
+                                y_offset = -1*(lane.width // 2 + car.width//2)
+
+                            car.set_geo(car_x + x_offset,
+                                        car_y + y_offset, rot)
+                            self._draw_car(car)
 
     def _draw_timer(self):
         # draw elapsed time
@@ -299,7 +370,7 @@ class Environment:
         dialog_h = 100
 
         dialog_y = (height // 2) - (dialog_h // 2)
-        print("Draw dialog", text, pygame.time.get_ticks())
+        print("Draw dialog", text, pygame.time.get_ticks()//1000)
         pygame.draw.rect(
             self.screen, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
         self._draw_text(text, width // 2, dialog_y + dialog_h //

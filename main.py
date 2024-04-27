@@ -19,9 +19,18 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 
 # game variables
-FPS = 60
-SIMULATE_DURATION = 60  # in seconds
 clock = pygame.time.Clock()
+game_config = {
+    "FPS": 60,  # frames per second
+    "SIMULATE_DURATION": 60,  # in seconds
+    "clock": clock,
+}
+
+cars_config = {
+    "num_cars": 1000,
+    # px per second, 1px = 0.1m, that's 120px/s = 12m/s = 43.2km/h
+    "init_speed": 120,
+}
 
 road_width = 200
 
@@ -41,11 +50,11 @@ lit_east_right = Light()
 
 # traffic lights phases
 lights_phases_config = [
+    Phase([lit_north_right, lit_south_right], 100),
+    Phase([lit_west_through, lit_west_left, lit_east_through, lit_east_left], 10),
     Phase([lit_north_through, lit_north_left,
           lit_south_through, lit_south_left], 10),
-    Phase([lit_north_right, lit_south_right], 5),
-    Phase([lit_west_through, lit_west_left, lit_east_through, lit_east_left], 10),
-    Phase([lit_west_right, lit_east_right], 5)
+    Phase([lit_west_right, lit_east_right], 5),
 ]
 
 
@@ -134,19 +143,15 @@ roads_config = [
     ),
 ]
 
-cars_config = {
-    "num_cars": 100,
-}
-
 
 def main():
     running = True
     print('Rendering traffic conjunction...')
     lights_control = StaticLightsControl(lights_phases_config)
-    traffic = Traffic(1, roads_config, cars_config, SIMULATE_DURATION)
+    traffic = Traffic(1, roads_config, cars_config, game_config)
     environment = Environment(screen, roads_config)
     while running:
-        clock.tick(FPS)
+        clock.tick(game_config["FPS"])
 
         # event handling
         for event in pygame.event.get():

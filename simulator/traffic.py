@@ -20,12 +20,13 @@ class Traffic:
         ('west', 'south'): 'right'
     }
 
-    def __init__(self, time_scale: int, streets: list[Street], cars_config, simulation_duration) -> None:
+    def __init__(self, time_scale: int, streets: list[Street], cars_config, game_config) -> None:
         self.time_scale = time_scale
         self.streets = streets
         self.num_cars = cars_config["num_cars"]
+        self.cars_config = cars_config
         self.num_spawned_cars = 0
-        self.simulation_duration = simulation_duration
+        self.game_config = game_config
         self.all_cars: list[Car] = []
         self.last_spawn_ms = 0
 
@@ -51,7 +52,8 @@ class Traffic:
             )
             to_intsec = current_lane.to_intsec
 
-            car = Car(street, current_lane, to_street, to_intsec)
+            car = Car(street, current_lane, to_street, to_intsec,
+                      game_config=self.game_config, init_speed=self.cars_config["init_speed"])
             self.all_cars.append(car)
             current_lane.cars.append(car)
             num_car_generated += 1
@@ -59,13 +61,12 @@ class Traffic:
         self.num_spawned_cars += num_car_generated
 
     def next_tick(self):
-        # don't know what this func is doing yet
         clock_ms = time.get_ticks()
 
         # check if we need to spawn new cars
         if self.num_spawned_cars < self.num_cars:
             spawn_interval_ms = (
-                self.simulation_duration * 1000 // self.num_cars)
+                self.game_config["SIMULATE_DURATION"] * 1000 // self.num_cars)
             if clock_ms - self.last_spawn_ms >= spawn_interval_ms:
                 self._spawn_car()
 

@@ -5,13 +5,23 @@ from simulator.lights_control.light import Light
 
 class Intersection:
     def __init__(self):
-        pass
+        self.cars: list[Car] = []
+        self.length = 10
 
     def set_from_lane(self, from_lane):
         self.from_lane: Lane = from_lane
 
     def set_to_lane(self, to_lane):
         self.to_lane: Lane = to_lane
+
+    def add_car(self, car):
+        self.cars.append(car)
+
+    def remove_car(self, car):
+        self.cars.remove(car)
+
+    def set_length(self, length):
+        self.length = length
 
 
 class Lane:
