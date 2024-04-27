@@ -50,11 +50,10 @@ lit_east_right = Light()
 
 # traffic lights phases
 lights_phases_config = [
-    Phase([lit_north_right, lit_south_right], 100),
+    Phase([lit_north_right, lit_south_right], 5),
     Phase([lit_west_through, lit_west_left, lit_east_through, lit_east_left], 10),
-    Phase([lit_north_through, lit_north_left,
-          lit_south_through, lit_south_left], 10),
     Phase([lit_west_right, lit_east_right], 5),
+    Phase([lit_north_through, lit_north_left, lit_south_through, lit_south_left], 10),
 ]
 
 

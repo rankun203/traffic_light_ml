@@ -294,70 +294,38 @@ class Environment:
                             self._draw_car(car)
                     elif lane.to_direction == 'right':
                         x, y = lane.right_x, to_lane.left_y
-                        sa, ea = 90, 180
-                        if lane.street.approach_direction == 'north':
-                            x, y = lane.right_x, to_lane.left_y
-                            sa, ea = 90, 180
-                        elif lane.street.approach_direction == 'south':
-                            x = to_lane.left_x - lane.right_x + to_lane.left_x
-                            y = lane.right_y - to_lane.left_y + lane.right_y
-                            sa, ea = 270, 0
-                        elif lane.street.approach_direction == 'east':
-                            x = lane.right_x - to_lane.left_x + lane.right_x
-                            y = lane.right_y
-                            sa, ea = 0, 90
-                        elif lane.street.approach_direction == 'west':
-                            x = to_lane.left_x
-                            y = to_lane.left_y - lane.right_y + to_lane.left_y
-                            sa, ea = 180, 270
+                        pygame.draw.line(self.screen, self.COLORS["WHITE"], (
+                            lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
 
-                        # Define the bounding rectangle for the arc
-                        arc_rect = pygame.Rect(
-                            x, y,
-                            abs(to_lane.left_x - lane.right_x) * 2,
-                            abs(to_lane.left_y - lane.right_y) * 2
-                        )
-                        xc, yc = arc_rect.center
-
-                        start_angle = math.radians(sa)
-                        end_angle = math.radians(ea)
-                        angle_diff = start_angle - end_angle
-                        pygame.draw.arc(
-                            self.screen, self.COLORS["WHITE"], arc_rect, start_angle, end_angle)
-
-                        # calculate arc distance
-                        radius = abs(to_lane.left_x - lane.right_x)
-                        angle_diff = abs(end_angle - start_angle)
-                        arc_distance = radius * angle_diff
-                        lane.to_intsec.set_length(arc_distance)
-
-                        radius = abs(to_lane.left_x - lane.right_x)
-
+                        length = int(math.sqrt(
+                            (lane.right_x - to_lane.left_x)**2 + (lane.right_y - to_lane.left_y)**2))
+                        lane.to_intsec.set_length(length)
                         for car in lane.to_intsec.cars:
-                            pre = car.travel_distance / arc_distance
-                            target_angle = 90 + start_angle + pre * angle_diff
-                            print(
-                                f'target_angle: {target_angle:.2f}, x_center: {xc}, y_center: {yc}')
-                            rot = int(180-90*pre)
-                            car_x = xc + radius * math.cos(target_angle)
-                            car_y = yc + radius * math.sin(target_angle)
+                            car_pre = car.travel_distance / length
+                            x, y = self.point_at_percentage(
+                                lane.right_x, lane.right_y, to_lane.left_x, to_lane.left_y, car_pre)
 
                             di = lane.street.approach_direction
                             x_offset = 0
                             y_offset = 0
+                            slope = abs(lane.right_x - to_lane.left_x) / \
+                                abs(lane.right_y - to_lane.left_y)
+                            rot = int(math.degrees(math.atan(slope)))
                             if di == 'north':
-                                x_offset = -1 * (lane.width // 2 + car.width // 2)
+                                x_offset = -1 * \
+                                    (lane.width // 2 + car.width // 2)
                                 y_offset = -1 * car.length
+                                rot = 180 - rot
                             elif di == 'west':
-                                x_offset = -1 * car.length
-                                y_offset = lane.width // 2 - car.width // 2
+                                x_offset = -1 * (car.length + lane.width // 2)
+                                y_offset = lane.width // 2 - car.length
                             elif di == 'south':
                                 x_offset = lane.width // 2 - car.width // 2
+                                rot = 180 - rot
                             elif di == 'east':
                                 y_offset = -1*(lane.width // 2 + car.width//2)
 
-                            car.set_geo(car_x + x_offset,
-                                        car_y + y_offset, rot)
+                            car.set_geo(x+x_offset, y+y_offset, rot)
                             self._draw_car(car)
 
     def _draw_timer(self):
