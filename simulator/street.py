@@ -42,6 +42,7 @@ class Lane:
         self.to_direction = to_direction
         self.light = light
         self.cars: list[Car] = []
+        self.passed_cars: list[Car] = []
         self.to_intsec = to_intsec
         self.from_intsecs = from_intsecs
 
@@ -54,12 +55,14 @@ class Lane:
 
     def reset(self):
         self.cars = []
+        self.passed_cars = []
 
     def add_car(self, car):
         self.cars.append(car)
 
     def remove_car(self, car):
         self.cars.remove(car)
+        self.passed_cars.append(car)
 
     def get_cars(self):
         return self.cars

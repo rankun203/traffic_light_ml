@@ -97,8 +97,8 @@ class Traffic:
         """
         total_waiting_s = 0
         for street in self.streets:
-            for approach_lanes in street.approach_lanes:
-                for car in approach_lanes.cars:
+            for lane in street.approach_lanes:
+                for car in lane.cars:
                     total_waiting_s += car.updated_waiting_s
 
         return total_waiting_s
@@ -109,7 +109,15 @@ class Traffic:
         """
         total_queue_length = 0
         for street in self.streets:
-            for approach_lanes in street.approach_lanes:
-                total_queue_length += approach_lanes.get_queue_length()
+            for lane in street.approach_lanes:
+                total_queue_length += lane.get_queue_length()
 
         return total_queue_length
+
+    def calc_passed_cars(self):
+        total_passed_cars = 0
+        for street in self.streets:
+            for lane in street.approach_lanes:
+                total_passed_cars += len(lane.passed_cars)
+
+        return total_passed_cars

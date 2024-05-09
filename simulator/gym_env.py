@@ -147,14 +147,19 @@ class TrafficSimulatorEnv(Env):
         """
         Reward for every car passing, penalty for every step the cars waiting
         """
-        # TODO: model the reward function
-        finished_cars = len(self.traffic.finished_cars)
-        total_waiting_ms = self.traffic.calc_waiting_time()
+        total_queue_length = self.traffic.calc_total_queue_length()
+        total_waiting = self.traffic.calc_waiting_time()
 
-        reward = 1 * finished_cars + -0.01 * total_waiting_ms
-        print(
-            f"Reward: {reward}, Finished cars: {finished_cars}, Total waiting time: {total_waiting_ms}")
-        return reward
+        # cars passed since last switch
+        total_cars_passed = self.traffic.calc_passed_cars()
+        last_cars_passed = self.last_switch_total_cars_passed if 'last_switch_total_cars_passed' in self.__dict__ else 0
+        cars_since_switch = total_cars_passed - last_cars_passed
+
+        reward = -1 * total_queue_length + \
+            -1 * total_waiting + \
+            1 * cars_since_switch
+        print(f"reward={reward}, total_queue_length={total_queue_length}, total_waiting={total_waiting}, cars_since_switch={cars_since_switch}")
+        return reward, total_cars_passed
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict, dict]:
         """
@@ -162,6 +167,7 @@ class TrafficSimulatorEnv(Env):
         """
         self.lights_control.reset(seed=seed)
         self.traffic.reset(seed=seed)
+        self.last_switch_total_cars_passed = 0
 
         if self.render_mode == "human":
             self._render_frame()
@@ -190,10 +196,14 @@ class TrafficSimulatorEnv(Env):
 
         # Capture the new state of the environment
         observation = self._get_obs()
-        reward = self._calculate_reward()
+        reward, total_cars_passed = self._calculate_reward()
         terminated = self._check_if_done()
         truncated = undertime or overtime
         info = self._get_info()  # Additional info for debugging or complex environments
+
+        # keep record of total_cars_passed after action=1
+        if action == 1:
+            self.last_switch_total_cars_passed = total_cars_passed
 
         if self.render_mode == "human":
             self._render_frame()
