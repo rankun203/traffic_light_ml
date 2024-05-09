@@ -155,8 +155,8 @@ class TrafficSimulatorEnv(Env):
         last_cars_passed = self.last_switch_total_cars_passed if 'last_switch_total_cars_passed' in self.__dict__ else 0
         cars_since_switch = total_cars_passed - last_cars_passed
 
-        reward = -1 * total_queue_length + \
-            -1 * total_waiting + \
+        reward = -0.1 * total_queue_length + \
+            -0.1 * total_waiting + \
             1 * cars_since_switch
         print(f"reward={reward}, total_queue_length={total_queue_length}, total_waiting={total_waiting}, cars_since_switch={cars_since_switch}")
         return reward, total_cars_passed
