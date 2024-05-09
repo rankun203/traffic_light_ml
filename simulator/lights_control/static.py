@@ -2,14 +2,18 @@ import math
 from pygame import time
 
 
-class Phase:
+class StaticPhase:
     def __init__(self, lights: list, duration_s: int):
         self.lights = lights
         self.duration_s = duration_s
 
 
 class StaticLightsControl:
-    def __init__(self, lights_phases_config: list[Phase]):
+    """
+    Static, meaning time is static
+    """
+
+    def __init__(self, lights_phases_config: list[StaticPhase]):
         self.phases = lights_phases_config
 
     def next_tick(self):

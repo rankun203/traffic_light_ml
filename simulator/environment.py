@@ -40,8 +40,8 @@ class Environment:
 
     approach_width_ratio = 0.6
 
-    def __init__(self, screen: pygame.Surface, roads_config: list[Street]):
-        self.screen = screen
+    def __init__(self, surface: pygame.Surface, roads_config: list[Street]):
+        self.surface = surface
         self.roads_config = roads_config
 
     def _draw_text(self, text, x, y, rotate, color=COLORS["WHITE"], h_center=False, v_center=False):
@@ -51,7 +51,7 @@ class Environment:
             x = x - rotated_text_surface.get_width() // 2
         if v_center:
             y = y - rotated_text_surface.get_height() // 2
-        self.screen.blit(rotated_text_surface, (x, y))
+        self.surface.blit(rotated_text_surface, (x, y))
 
     def _draw_lane_label(self, to_direction, x, y, rotate, color=COLORS["WHITE"]):
         text_surface = self.signs[to_direction]
@@ -61,7 +61,7 @@ class Environment:
         #     x = x - rotated_text_surface.get_width()
         # elif rotate == 270:
         #     y = y - rotated_text_surface.get_height()
-        self.screen.blit(rotated_text_surface, (x, y))
+        self.surface.blit(rotated_text_surface, (x, y))
 
     def _draw_car(self, car: Car):
         car_surface = pygame.Surface((car.width, car.length), pygame.SRCALPHA)
@@ -70,7 +70,7 @@ class Environment:
         rotated_rect = rotated_car_surface.get_rect(center=(car.x, car.y))
 
         # Blit the rotated car surface onto the screen at the position of the rotated rect
-        self.screen.blit(rotated_car_surface, rotated_rect.center)
+        self.surface.blit(rotated_car_surface, rotated_rect.center)
 
     def _draw_cars_on_lane(self, lane: Lane, x, y, width, length, approach_direction):
         for car in lane.cars:
@@ -106,9 +106,9 @@ class Environment:
         """Must choose the right origin for x, y"""
         if approach_direction == "north":
             # origin is top left
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"],
                              (x, y), (x, y + length))
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x + width, y),
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"], (x + width, y),
                              (x + width, y + length))
             lane.set_geo(int(x), int(y), int(x+width), int(y), width, length)
             if lane.is_approach:
@@ -118,14 +118,14 @@ class Environment:
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
-                pygame.draw.rect(self.screen, lit_color, (x, y-5, width, 5))
+                pygame.draw.rect(self.surface, lit_color, (x, y-5, width, 5))
 
             return (x + width, y)
         elif approach_direction == "south":
             # origin is bottom right
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"],
                              (x, y), (x, y - length))
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x - width, y),
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"], (x - width, y),
                              (x - width, y - length))
             lane.set_geo(int(x), int(y), int(x-width), int(y), width, length)
             if lane.is_approach:
@@ -135,15 +135,15 @@ class Environment:
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
-                pygame.draw.rect(self.screen, lit_color,
+                pygame.draw.rect(self.surface, lit_color,
                                  (x-width+1, y, width, 5))
 
             return (x - width, y)
         elif approach_direction == "east":
             # origin is top right
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"],
                              (x, y), (x-length, y))
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y+width),
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"], (x, y+width),
                              (x-length, y+width))
             lane.set_geo(int(x), int(y), int(x), int(y+width), width, length)
             if lane.is_approach:
@@ -153,14 +153,14 @@ class Environment:
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
-                pygame.draw.rect(self.screen, lit_color, (x, y+1, 5, width))
+                pygame.draw.rect(self.surface, lit_color, (x, y+1, 5, width))
 
             return (x, y+width)
         elif approach_direction == "west":
             # origin is bottom left
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"],
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"],
                              (x, y), (x+length, y))
-            pygame.draw.line(self.screen, self.COLORS["LANE_LINE"], (x, y-width),
+            pygame.draw.line(self.surface, self.COLORS["LANE_LINE"], (x, y-width),
                              (x + length, y - width))
             lane.set_geo(int(x), int(y), int(x), int(y-width), width, length)
             if lane.is_approach:
@@ -170,7 +170,7 @@ class Environment:
             # Draw traffic light
             if lane.is_approach and lane.light:
                 lit_color = self.COLORS[lane.light.color.upper()]
-                pygame.draw.rect(self.screen, lit_color,
+                pygame.draw.rect(self.surface, lit_color,
                                  (x-5, y-width, 5, width))
 
             return (x, y-width)
@@ -206,7 +206,7 @@ class Environment:
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x + 1, start_y,
+            pygame.draw.rect(self.surface, self.COLORS["DIVIDER"], (start_x + 1, start_y,
                              st.divider_width - 1, st.length))
             start_x += st.divider_width
             # draw exit lanes
@@ -221,7 +221,7 @@ class Environment:
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x -
+            pygame.draw.rect(self.surface, self.COLORS["DIVIDER"], (start_x -
                              st.divider_width, start_y - st.length, st.divider_width, st.length))
             start_x -= st.divider_width
             start_x, start_y = _draw_lanes_inner(
@@ -235,8 +235,8 @@ class Environment:
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x - st.length, start_y + 1,
-                                                                   st.length, st.divider_width - 1))
+            pygame.draw.rect(self.surface, self.COLORS["DIVIDER"], (start_x - st.length, start_y + 1,
+                                                                    st.length, st.divider_width - 1))
             start_y += st.divider_width
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, exit_lane_width, st.exit_lanes)
@@ -249,8 +249,8 @@ class Environment:
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, approach_lane_width, st.approach_lanes)
             # draw divider
-            pygame.draw.rect(self.screen, self.COLORS["DIVIDER"], (start_x, start_y - st.divider_width + 1,
-                                                                   st.length, st.divider_width - 1))
+            pygame.draw.rect(self.surface, self.COLORS["DIVIDER"], (start_x, start_y - st.divider_width + 1,
+                                                                    st.length, st.divider_width - 1))
             start_y -= st.divider_width
             start_x, start_y = _draw_lanes_inner(
                 start_x, start_y, exit_lane_width, st.exit_lanes)
@@ -259,10 +259,10 @@ class Environment:
         for st in self.roads_config:
             if st.approach_direction in ["north", "south"]:
                 pygame.draw.rect(
-                    self.screen, self.COLORS["ROAD"], (st.x, st.y, st.width, st.length))
+                    self.surface, self.COLORS["ROAD"], (st.x, st.y, st.width, st.length))
             else:
                 pygame.draw.rect(
-                    self.screen, self.COLORS["ROAD"], (st.x, st.y, st.length, st.width))
+                    self.surface, self.COLORS["ROAD"], (st.x, st.y, st.length, st.width))
             self._draw_lanes(st)
 
     def point_at_percentage(self, ax: int, ay: int, bx: int, by: int, t: float):
@@ -281,7 +281,7 @@ class Environment:
                         # pygame.draw.line(self.screen, self.COLORS["BACKGROUND_ACCENT"], (
                         #     lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
                     elif lane.to_direction == 'through':
-                        pygame.draw.line(self.screen, self.COLORS["WHITE"], (
+                        pygame.draw.line(self.surface, self.COLORS["WHITE"], (
                             lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
                         lane.to_intsec.set_length(int(math.sqrt(
                             (lane.right_x - to_lane.left_x)**2 + (lane.right_y - to_lane.left_y)**2)))
@@ -313,7 +313,7 @@ class Environment:
                             self._draw_car(car)
                     elif lane.to_direction == 'right':
                         x, y = lane.right_x, to_lane.left_y
-                        pygame.draw.line(self.screen, self.COLORS["WHITE"], (
+                        pygame.draw.line(self.surface, self.COLORS["WHITE"], (
                             lane.right_x, lane.right_y), (to_lane.left_x, to_lane.left_y))
 
                         length = int(math.sqrt(
@@ -350,26 +350,27 @@ class Environment:
     def _draw_timer(self):
         # draw elapsed time
         clock_ms = pygame.time.get_ticks()
-        self._draw_text(f"World time: {clock_ms//1000}s", 10, 8, 0, self.COLORS["WHITE"])
+        self._draw_text(
+            f"World time: {clock_ms//1000}s", 10, 8, 0, self.COLORS["WHITE"])
 
     def draw_countdown(self, count: str):
-        width, height = self.screen.get_width(), self.screen.get_height()
+        width, height = self.surface.get_width(), self.surface.get_height()
         self._draw_text(f"Count down: {count}",
                         10, 40, 0, self.COLORS["WHITE"])
 
     def draw_dialog(self, text: str):
-        width, height = self.screen.get_width(), self.screen.get_height()
+        width, height = self.surface.get_width(), self.surface.get_height()
         dialog_h = 100
 
         dialog_y = (height // 2) - (dialog_h // 2)
         print("Draw dialog", text, pygame.time.get_ticks()//1000)
         pygame.draw.rect(
-            self.screen, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
+            self.surface, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
         self._draw_text(text, width // 2, dialog_y + dialog_h //
                         2, 0, self.COLORS["BLACK"], h_center=True, v_center=True)
 
     def next_tick(self):
-        self.screen.fill(self.COLORS["BACKGROUND"])
+        self.surface.fill(self.COLORS["BACKGROUND"])
         self._draw_streets()
         self._draw_intersections()
         self._draw_timer()

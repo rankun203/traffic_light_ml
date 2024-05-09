@@ -37,7 +37,10 @@ class Car:
         self.y = y
         self.rotate = rotate
 
-    def next_tick(self):
+    def next_tick(self) -> bool | None:
+        """
+        Returns True if the car is out of the simulation
+        """
         if self.street is not None and not self.in_intersection:
             if self.lane.light is not None and self.lane.light.color == "red" and self.travel_distance >= self.street.length:
                 # stop criteria: lane is red, travel distance is greater than street length

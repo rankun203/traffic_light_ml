@@ -1,3 +1,4 @@
+from typing import Optional
 from pygame import time
 from simulator.car import Car
 from simulator.street import Street
@@ -5,6 +6,9 @@ import random
 
 
 class Traffic:
+    """
+    This class creates traffic on the streets: spawning cars
+    """
     turn_directions = {
         ('north', 'south'): 'through',
         ('north', 'east'): 'left',
@@ -28,6 +32,15 @@ class Traffic:
         self.num_spawned_cars = 0
         self.game_config = game_config
         self.all_cars: list[Car] = []
+        self.finished_cars: list[Car] = []
+        self.last_spawn_ms = 0
+
+    def reset(self, seed: Optional[int] = None):
+        random.seed(seed)
+
+        self.num_spawned_cars = 0
+        self.all_cars = []
+        self.finished_cars = []
         self.last_spawn_ms = 0
 
     def _spawn_car(self):
@@ -73,5 +86,6 @@ class Traffic:
         for car in self.all_cars:
             recycle_car = car.next_tick()
             if recycle_car:
+                self.finished_cars.append(car)
                 self.all_cars.remove(car)
         return clock_ms
