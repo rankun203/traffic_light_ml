@@ -11,11 +11,14 @@ git clone https://github.com/rankun203/traffic_light_ml
 # install dependencies
 poetry install
 
-# run app
-poetry run python main.py
+# run a static policy
+poetry run python run_static.py
+
+# run gym train environment
+poetry run python gym_train.py
 
 # Setup auto-reload
-npx nodemon -w . -x "poetry run python main.py" -e "py toml"
+npx nodemon -w . -x "poetry run python run_static.py" -e "py toml"
 ```
 
 > [!NOTE]
