@@ -8,6 +8,9 @@ class Intersection:
         self.cars: list[Car] = []
         self.length = 10
 
+    def reset(self):
+        self.cars = []
+
     def set_from_lane(self, from_lane):
         self.from_lane: Lane = from_lane
 
@@ -48,6 +51,9 @@ class Lane:
         if len(from_intsecs) > 0:
             for intsec in from_intsecs:
                 intsec.set_to_lane(self)
+
+    def reset(self):
+        self.cars = []
 
     def add_car(self, car):
         self.cars.append(car)
@@ -93,6 +99,12 @@ class Street:
             l.set_street(self)
         for l in self.exit_lanes:
             l.set_street(self)
+
+    def reset(self):
+        for l in self.approach_lanes:
+            l.reset()
+        for l in self.exit_lanes:
+            l.reset()
 
     def __str__(self) -> str:
         return f"Street: {self.name} ({self.x}, {self.y})"

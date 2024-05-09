@@ -42,6 +42,8 @@ class Traffic:
         self.all_cars = []
         self.finished_cars = []
         self.last_spawn_ms = 0
+        for street in self.streets:
+            street.reset()
 
     def _spawn_car(self):
         num_new_cars = 1
