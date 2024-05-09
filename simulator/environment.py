@@ -2,7 +2,7 @@ import pygame
 import math
 from simulator.car import Car
 
-from simulator.street import Intersection, Lane, Street
+from simulator.street import Lane, Street
 
 # Initialize font
 pygame.font.init()

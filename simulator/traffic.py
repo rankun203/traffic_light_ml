@@ -52,7 +52,6 @@ class Traffic:
         while num_car_generated < num_new_cars:
             street = random.choice(self.streets)
             # random choose to_street from the rest of the streets
-            # TODO: check street approach lanes and filter out the lanes that are not possible to go to for to_street
             to_street = random.choice(
                 [st for st in self.streets if st != street])
 
@@ -91,3 +90,15 @@ class Traffic:
                 self.finished_cars.append(car)
                 self.all_cars.remove(car)
         return clock_ms
+
+    def calc_waiting_time(self):
+        """
+        Calculate the updated total waiting time of all cars on all approaching lanes
+        """
+        total_waiting_s = 0
+        for street in self.streets:
+            for approach_lanes in street.approach_lanes:
+                for car in approach_lanes.cars:
+                    total_waiting_s += car.updated_waiting_s
+
+        return total_waiting_s

@@ -103,6 +103,7 @@ class Street:
     def reset(self):
         for l in self.approach_lanes:
             l.reset()
+            l.to_intsec.reset() if l.to_intsec is not None else None
         for l in self.exit_lanes:
             l.reset()
 

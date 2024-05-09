@@ -2,6 +2,7 @@ from random import randint
 from typing import Optional
 import random
 
+from pygame import time
 from pygame.time import Clock
 
 
@@ -22,6 +23,7 @@ class Car:
         self.to_intsec = to_intsec
         self.in_intersection = False
         self.travel_distance = 0  # travel unit, px for now
+        self.updated_waiting_s = 0
         self.width = 10  # car width
         self.length = random.randint(15, 25)  # car length
         self.drive_config = {
@@ -36,6 +38,16 @@ class Car:
         self.x = x
         self.y = y
         self.rotate = rotate
+
+    def _get_step_ms(self):
+        clock_ms = time.get_ticks()
+
+        if 'last_clock_ms' not in self.__dict__:
+            self.last_clock_ms = clock_ms
+
+        step_ms = clock_ms - self.last_clock_ms
+        self.last_clock_ms = clock_ms
+        return step_ms
 
     def next_tick(self) -> bool | None:
         """
@@ -67,8 +79,14 @@ class Car:
             self.current_speed = self.init_speed
 
         # forwards
-        elapsed_time_s = 1/self.game_config["FPS"]
-        self.travel_distance += self.current_speed * elapsed_time_s
+        step_s = self._get_step_ms() / 1000
+        self.travel_distance += self.current_speed * step_s
+
+        # update car waiting time if car is not moving
+        if self.current_speed < 1:
+            self.updated_waiting_s += step_s
+        else:
+            self.updated_waiting_s = 0
 
         if self.in_intersection and self.travel_distance + self.length >= self.to_intsec.length:
             # leaving intersection

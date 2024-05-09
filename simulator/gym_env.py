@@ -90,8 +90,7 @@ class TrafficSimulatorEnv(Env):
             pygame.event.pump()
             pygame.display.update()
 
-            # We need to ensure that human-rendering occurs at the predefined framerate.
-            # The following line will automatically add a delay to keep the framerate stable.
+            # tick the clock to control the frame rate
             self.clock.tick(self.metadata["render_fps"])
         else:  # rgb_array
             return np.transpose(np.array(pygame.surfarray.pixels3d(self.canvas)), axes=(1, 0, 2))
@@ -118,11 +117,16 @@ class TrafficSimulatorEnv(Env):
 
     def _calculate_reward(self):
         """
-        Reward = number of finished cars
+        Reward for every car passing, penalty for every step the cars waiting
         """
         # TODO: model the reward function
         finished_cars = len(self.traffic.finished_cars)
-        return finished_cars
+        total_waiting_ms = self.traffic.calc_waiting_time()
+
+        reward = 1 * finished_cars + -0.01 * total_waiting_ms
+        print(
+            f"Reward: {reward}, Finished cars: {finished_cars}, Total waiting time: {total_waiting_ms}")
+        return reward
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict, dict]:
         """
