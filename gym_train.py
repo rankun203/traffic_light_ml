@@ -1,6 +1,5 @@
 import gymnasium as gym
 from gymnasium.envs.registration import register
-from pygame import time
 from tqdm import tqdm
 import numpy as np
 
