@@ -102,3 +102,14 @@ class Traffic:
                     total_waiting_s += car.updated_waiting_s
 
         return total_waiting_s
+
+    def calc_total_queue_length(self):
+        """
+        Calculate the total queue length of all approaching lanes
+        """
+        total_queue_length = 0
+        for street in self.streets:
+            for approach_lanes in street.approach_lanes:
+                total_queue_length += approach_lanes.get_queue_length()
+
+        return total_queue_length

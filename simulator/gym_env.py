@@ -8,7 +8,7 @@ from pygame.time import Clock
 from simulator.environment import Environment
 from simulator.lights_control.adaptive import AdaptiveLightsControl, Phase
 from simulator.lights_control.light import lit_north_left, lit_north_through, lit_north_right, lit_south_left, lit_south_through, lit_south_right, lit_west_left, lit_west_through, lit_west_right, lit_east_left, lit_east_through, lit_east_right
-from simulator.config import roads_config, cars_config, game_config
+from simulator.config import streets, cars_config, game_config
 from simulator.traffic import Traffic
 
 
@@ -33,16 +33,6 @@ class TrafficSimulatorEnv(Env):
 
     def __init__(self, render_mode=None):
         super(TrafficSimulatorEnv, self).__init__()
-        self.action_space = spaces.Discrete(2)  # e.g., number of actions
-        self.observation_space = spaces.Dict({
-            # TODO: design the state
-            # Assuming a maximum of 100 finished cars
-            "finished_cars": spaces.Discrete(100)
-        })
-
-        self.screen: Optional[pygame.Surface] = None
-        self.clock: Optional[Clock] = None
-        self.environment: Optional[Environment] = None
 
         # Initialize your game components here
         self.lights_phases_config = [
@@ -53,14 +43,43 @@ class TrafficSimulatorEnv(Env):
             Phase([lit_west_through, lit_west_left,
                   lit_east_through, lit_east_left]),
         ]
+
+        # State and action
+        self.observation_space = spaces.Dict({
+            # Assuming a maximum of 100 finished cars
+            "current_phase": spaces.Discrete(start=0, n=len(self.lights_phases_config)),
+            "lanes": self._define_lanes_space(),
+        })
+        self.action_space = spaces.Discrete(start=0, n=2)
+
+        self.screen: Optional[pygame.Surface] = None
+        self.clock: Optional[Clock] = None
+        self.environment: Optional[Environment] = None
+
         self.lights_control = AdaptiveLightsControl(
             self.lights_phases_config, self.metadata["traffic_light_timings"])
-        self.traffic = Traffic(1, roads_config, cars_config, game_config)
+        self.traffic = Traffic(1, streets, cars_config, game_config)
 
         if render_mode is not None and render_mode not in self.metadata["render_modes"]:
             raise ValueError(
                 f"Invalid render_mode. Expected one of {self.metadata['render_modes']}, got {render_mode}")
         self.render_mode = render_mode
+
+    def _define_lanes_space(self):
+        """
+        We define 2 state spaces for each lane!
+        1. queue length
+        2. number of cars in the lane
+        """
+        lanes_space = {}
+        for s in streets:
+            for al in s.approach_lanes:
+                lanes_space[f"queue_{s.approach_direction}_{al.to_direction}"] = spaces.Discrete(
+                    start=0, n=20)  # at most we care about 20 cars in the queue, waiting
+                lanes_space[f"cars_{s.approach_direction}_{al.to_direction}"] = spaces.Discrete(
+                    start=0, n=50)  # at most we care about 50 cars in the lane
+
+        return spaces.Dict(lanes_space)
 
     def _render_frame(self):
         """
@@ -82,7 +101,7 @@ class TrafficSimulatorEnv(Env):
 
         if self.environment is None and self.render_mode == "human" and self.screen:
             self.canvas = pygame.Surface((screen_width, screen_height))
-            self.environment = Environment(self.canvas, roads_config)
+            self.environment = Environment(self.canvas, streets)
 
         if self.render_mode == "human" and self.screen and self.clock:
             # The following line copies our drawings from `canvas` to the visible window
@@ -99,7 +118,16 @@ class TrafficSimulatorEnv(Env):
         """
         Private method to capture the current state space variables
         """
-        return {"finished_cars": len(self.traffic.finished_cars)}
+        lanes = {}
+        for s in streets:
+            for al in s.approach_lanes:
+                lanes[f"queue_{s.approach_direction}_{al.to_direction}"] = al.get_queue_length()  # noqa
+                lanes[f"cars_{s.approach_direction}_{al.to_direction}"] = len(al.cars)  # noqa
+
+        return {
+            "current_phase": self.lights_control.current_phase_i,
+            "lanes": lanes
+        }
 
     def _get_info(self):
         return {

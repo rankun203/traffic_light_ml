@@ -25,6 +25,6 @@ for _ in range(10000):
     observation, reward, terminated, truncated, info = env.step(action)
 
     if terminated or truncated:
+        print(f'resetting (action={action}, reward={reward})', observation, info)  # noqa
         observation, info = env.reset(seed=next_seed())
-        print(f'reset (action={action})', observation, info)
 env.close()

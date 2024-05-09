@@ -38,7 +38,7 @@ class Lane:
     ):
         # approaching the intersection or leaving intersection
         self.is_approach = is_approach
-        # left, through, right
+        # left, left_right, left_through_right, left_through, left, right, through_right, through
         self.to_direction = to_direction
         self.light = light
         self.cars: list[Car] = []
@@ -77,6 +77,16 @@ class Lane:
         self.right_y = right_y
         self.width = width
         self.length = length
+
+    def get_queue_length(self):
+        """
+        Get real-time queue length
+        """
+        queue_length = 0
+        for car in self.cars:
+            if car.current_speed < 1:
+                queue_length += 1
+        return queue_length
 
 
 class Street:

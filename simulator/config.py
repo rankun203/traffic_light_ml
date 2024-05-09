@@ -37,7 +37,7 @@ intsec_east_right = Intersection()
 
 
 # Streets instances, 4 streets are connected to the intersection
-roads_config = [
+streets = [
     Street(
         name="Lygon Street",
         x=screen_width//2-(street_width//2), y=0,

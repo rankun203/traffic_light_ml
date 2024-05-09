@@ -6,7 +6,7 @@ from simulator.environment import Environment
 from simulator.lights_control.static import StaticPhase, StaticLightsControl
 from simulator.lights_control.light import lit_north_left, lit_north_through, lit_north_right, lit_south_left, lit_south_through, lit_south_right, lit_west_left, lit_west_through, lit_west_right, lit_east_left, lit_east_through, lit_east_right
 from simulator.traffic import Traffic
-from simulator.config import screen_width, screen_height, roads_config, game_config, cars_config
+from simulator.config import screen_width, screen_height, streets, game_config, cars_config
 
 pygame.init()
 
@@ -33,8 +33,8 @@ def main():
     running = True
     print('Rendering traffic conjunction...')
     lights_control = StaticLightsControl(lights_phases_config)
-    traffic = Traffic(1, roads_config, cars_config, game_config)
-    environment = Environment(screen, roads_config)
+    traffic = Traffic(1, streets, cars_config, game_config)
+    environment = Environment(screen, streets)
     while running:
         clock.tick(game_config["FPS"])
 
