@@ -27,7 +27,6 @@ class Traffic:
     def __init__(self, time_scale: int, streets: list[Street], cars_config, game_config) -> None:
         self.time_scale = time_scale
         self.streets = streets
-        self.num_cars = cars_config["num_cars"]
         self.cars_config = cars_config
         self.num_spawned_cars = 0
         self.game_config = game_config
@@ -76,13 +75,24 @@ class Traffic:
 
     def next_tick(self):
         clock_ms = time.get_ticks()
+        cars_per_min = self.cars_config["cars_per_min"]
 
-        # check if we need to spawn new cars
-        if self.num_spawned_cars < self.num_cars:
-            spawn_interval_ms = (
-                self.game_config["SIMULATE_DURATION"] * 1000 // self.num_cars)
-            if clock_ms - self.last_spawn_ms >= spawn_interval_ms:
+        # calculate step in minutes
+        step_min = self._get_step_ms() / 1000 / 60
+        # calculate cars to spawn in this step
+        cars_per_step = cars_per_min * step_min
+        # if cars_per_step >= 1, spawn cars and reset acc_cars_to_spawn to acc%1
+        if 'acc_cars_to_spawn' not in self.__dict__:
+            self.acc_cars_to_spawn = 0
+        num_cars_to_spawn = self.acc_cars_to_spawn + cars_per_step
+        if num_cars_to_spawn >= 1:
+            self.acc_cars_to_spawn = num_cars_to_spawn % 1
+            num_cars_to_spawn = int(num_cars_to_spawn)
+            for _ in range(num_cars_to_spawn):
                 self._spawn_car()
+        else:
+            # delegate number of cars to spawn to next step until it reaches >= 1
+            self.acc_cars_to_spawn += cars_per_step
 
         for car in self.all_cars:
             recycle_car = car.next_tick()
@@ -90,6 +100,16 @@ class Traffic:
                 self.finished_cars.append(car)
                 self.all_cars.remove(car)
         return clock_ms
+
+    def _get_step_ms(self):
+        clock_ms = time.get_ticks()
+
+        if 'last_clock_ms' not in self.__dict__:
+            self.last_clock_ms = clock_ms
+
+        step_ms = clock_ms - self.last_clock_ms
+        self.last_clock_ms = clock_ms
+        return step_ms
 
     def calc_waiting_time(self):
         """

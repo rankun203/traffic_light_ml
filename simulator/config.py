@@ -13,7 +13,8 @@ game_config = {
 }
 
 cars_config = {
-    "num_cars": 200,
+    "cars_per_min": 80,
+    # "num_cars": 200,
     # px per second, 1px = 0.1m, that's 120px/s = 12m/s = 43.2km/h
     "init_speed": 120,
 }

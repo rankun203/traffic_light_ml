@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict
 from gymnasium import Env
 import numpy as np
 
@@ -42,7 +42,7 @@ class TrafficLightAgent:
         obs_key = self._obs_to_tuple(obs)
         if np.random.random() < self.epsilon:
             action = self.env.action_space.sample()
-            print(f"[agent] exploring: Chose random action {action}")
+            # print(f"[agent] exploring: Chose random action {action}")
         else:
             action = int(np.argmax(self.q_values[obs_key]))
             print(f"[agent] exploiting: Chose best known action {action}")
@@ -66,8 +66,7 @@ class TrafficLightAgent:
         )
 
         self.q_values[obs_key][action] += self.lr * temporal_difference
-        print(
-            f"[agent] updated Q-value for state {obs_key}, action {action}: New Q-value = {self.q_values[obs_key][action]}")
+        # print(f"[agent] updated Q-value for state {obs_key}, action {action}: New Q-value = {self.q_values[obs_key][action]}")  # noqa
 
         self.training_error.append(temporal_difference)
 
@@ -75,9 +74,15 @@ class TrafficLightAgent:
         old_epsilon = self.epsilon
         self.epsilon = max(self.final_epsilon,
                            self.epsilon - self.epsilon_decay)
-        print(f"[agent] epsilon decayed from {old_epsilon} to {self.epsilon}")
+        # print(f"[agent] epsilon decayed from {old_epsilon} to {self.epsilon}")
 
     def _obs_to_tuple(self, obs: dict) -> tuple:
         """Convert observation dictionary to a tuple to be used as keys in Q-value dict."""
         # This function now handles nested dictionaries
         return tuple((key, tuple(value.items()) if isinstance(value, dict) else value) for key, value in sorted(obs.items()))
+
+    def print_q_table(self):
+        print("[agent] Q-values:", '-' * 30)
+        for state, actions in self.q_values.items():
+            print(f"State: {state}, Actions: {actions}")
+        print('-----------------', '-' * 30)

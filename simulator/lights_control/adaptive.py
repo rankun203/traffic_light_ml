@@ -49,3 +49,6 @@ class AdaptiveLightsControl:
 
         overtime = time.get_ticks() - self.phase_start_ms > self.phase_max_s * 1000
         return overtime
+
+    def get_phase_time(self):
+        return time.get_ticks() - self.phase_start_ms

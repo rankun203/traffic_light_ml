@@ -147,6 +147,7 @@ class TrafficSimulatorEnv(Env):
         """
         Reward for every car passing, penalty for every step the cars waiting
         """
+        phase_stay_s = self.lights_control.get_phase_time() / 1000
         total_queue_length = self.traffic.calc_total_queue_length()
         total_waiting = self.traffic.calc_waiting_time()
 
@@ -157,8 +158,11 @@ class TrafficSimulatorEnv(Env):
 
         reward = -0.1 * total_queue_length + \
             -0.1 * total_waiting + \
-            1 * cars_since_switch
-        print(f"reward={reward}, total_queue_length={total_queue_length}, total_waiting={total_waiting}, cars_since_switch={cars_since_switch}")
+            1 * cars_since_switch + \
+            10 * phase_stay_s
+
+        current_p = self.lights_control.current_phase_i
+        print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting:.3f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_s):3d}s")  # noqa
         return reward, total_cars_passed
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict, dict]:
@@ -182,6 +186,13 @@ class TrafficSimulatorEnv(Env):
         """
         if action > 1 or action < 0:
             raise ValueError("Invalid action")
+
+        phase_stay_s = self.lights_control.get_phase_time() / 1000
+        penalty_reward = 0
+        if phase_stay_s < self.metadata["traffic_light_timings"]["phase_min_s"]:
+            print(f"[env] penalty: phase stay time {phase_stay_s:.3f} < {self.metadata['traffic_light_timings']['phase_min_s']}s, reset action to 0")  # noqa
+            penalty_reward = -10
+            action = 0
 
         # switch lights to the next phase
         undertime = False
@@ -207,6 +218,8 @@ class TrafficSimulatorEnv(Env):
 
         if self.render_mode == "human":
             self._render_frame()
+
+        reward += penalty_reward
 
         return observation, reward, terminated, truncated, info
 
