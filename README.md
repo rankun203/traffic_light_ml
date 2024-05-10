@@ -2,6 +2,8 @@
 
 Using reinforcement learning to optimize traffic light operations to maximize throughput.
 
+<img width="800" alt="image" src="https://github.com/rankun203/traffic_light_ml/assets/2988555/027cd010-b0e7-47b0-b070-5196ab952304">
+
 ## Setup Development Environment
 
 ```bash
