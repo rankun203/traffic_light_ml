@@ -43,6 +43,7 @@ class Environment:
     def __init__(self, surface: pygame.Surface, roads_config: list[Street]):
         self.surface = surface
         self.roads_config = roads_config
+        self.next_tick()
 
     def _draw_text(self, text, x, y, rotate, color=COLORS["WHITE"], h_center=False, v_center=False):
         text_surface = self.lane_font.render(text, True, color)

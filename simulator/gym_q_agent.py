@@ -1,10 +1,11 @@
 from collections import defaultdict
+import random
 from typing import Dict
 from gymnasium import Env
 import numpy as np
 
 
-class TrafficLightAgent:
+class TrafficLightQAgent:
     def __init__(
         self,
         env: Env,
@@ -30,7 +31,7 @@ class TrafficLightAgent:
         self.q_values = defaultdict(lambda: np.zeros(self.env.action_space.n))
 
         self.lr = learning_rate
-        self.discount_factor = discount_factor
+        self.df = discount_factor
 
         self.epsilon = initial_epsilon
         self.epsilon_decay = epsilon_decay
@@ -40,12 +41,15 @@ class TrafficLightAgent:
 
     def get_action(self, obs: dict) -> int:
         obs_key = self._obs_to_tuple(obs)
-        if np.random.random() < self.epsilon:
+        if random.random() < self.epsilon:
             action = self.env.action_space.sample()
             # print(f"[agent] exploring: Chose random action {action}")
         else:
             action = int(np.argmax(self.q_values[obs_key]))
             print(f"[agent] exploiting: Chose best known action {action}")
+            if action == 1:
+                print(
+                    f"[agent] get_action=1 {obs_key}, Q {self.q_values[obs_key]}")
         return action
 
     def update(
@@ -59,14 +63,15 @@ class TrafficLightAgent:
         obs_key = self._obs_to_tuple(obs)
         next_obs_key = self._obs_to_tuple(next_obs)
 
+        # terminated - mute the future Q-value
+        # Best future Q-value for the next state
         future_q_value = (not terminated) * np.max(self.q_values[next_obs_key])
-        temporal_difference = (
-            reward + self.discount_factor * future_q_value -
-            self.q_values[obs_key][action]
-        )
+        q_sa = self.q_values[obs_key][action]
 
-        self.q_values[obs_key][action] += self.lr * temporal_difference
-        # print(f"[agent] updated Q-value for state {obs_key}, action {action}: New Q-value = {self.q_values[obs_key][action]}")  # noqa
+        # q-learning update rule, derived from the Bellman equation
+        temporal_difference = reward + self.df * future_q_value - q_sa
+        self.q_values[obs_key][action] = q_sa + self.lr * temporal_difference
+        print(f"[agent] state ?, action {action}, prev Q {q_sa}, next Q {self.q_values[obs_key][action]}")  # noqa
 
         self.training_error.append(temporal_difference)
 
@@ -74,7 +79,7 @@ class TrafficLightAgent:
         old_epsilon = self.epsilon
         self.epsilon = max(self.final_epsilon,
                            self.epsilon - self.epsilon_decay)
-        # print(f"[agent] epsilon decayed from {old_epsilon} to {self.epsilon}")
+        print(f"[agent] epsilon decayed from {old_epsilon} to {self.epsilon}")
 
     def _obs_to_tuple(self, obs: dict) -> tuple:
         """Convert observation dictionary to a tuple to be used as keys in Q-value dict."""

@@ -1,3 +1,4 @@
+from math import ceil
 from typing import Optional
 from simulator.car import Car
 from simulator.lights_control.light import Light
@@ -28,6 +29,8 @@ class Intersection:
 
 
 class Lane:
+    bin_size = 15
+
     def __init__(
             self,
             is_approach,
@@ -80,6 +83,25 @@ class Lane:
         self.right_y = right_y
         self.width = width
         self.length = length
+
+    def get_state_space(self):
+        """
+        Return the state definition for the lane: number of cells
+        """
+        # 37 bins
+        # 8 is the minimum distance unit, @see Car.drive_config
+        return ceil(self.length / self.bin_size)
+
+    def get_state(self):
+        """
+        Return an array of each bin of the lane and whether it is occupied
+        """
+        state = {i: 0 for i in range(self.get_state_space())}
+        for car in self.cars:
+            dist_from_intsec = self.length - car.travel_distance
+            bin = max(0, int(dist_from_intsec / self.bin_size))
+            state[bin] = 1
+        return state
 
     def get_queue_length(self):
         """

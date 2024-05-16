@@ -34,6 +34,8 @@ class Traffic:
         self.finished_cars: list[Car] = []
         self.last_spawn_ms = 0
 
+        self.acc_cars_to_spawn = 0
+
     def reset(self, seed: Optional[int] = None):
         random.seed(seed)
 
@@ -79,11 +81,9 @@ class Traffic:
 
         # calculate step in minutes
         step_min = self._get_step_ms() / 1000 / 60
-        # calculate cars to spawn in this step
+        # calculate number of cars to spawn in this step
         cars_per_step = cars_per_min * step_min
         # if cars_per_step >= 1, spawn cars and reset acc_cars_to_spawn to acc%1
-        if 'acc_cars_to_spawn' not in self.__dict__:
-            self.acc_cars_to_spawn = 0
         num_cars_to_spawn = self.acc_cars_to_spawn + cars_per_step
         if num_cars_to_spawn >= 1:
             self.acc_cars_to_spawn = num_cars_to_spawn % 1

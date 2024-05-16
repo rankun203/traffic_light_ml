@@ -29,10 +29,15 @@ class TrafficSimulatorEnv(Env):
             "phase_min_s": 10,  # green + yellow, simplified phase
             "phase_max_s": 300,  # green + yellow, simplified phase
         },
+        "max_queue_length": 10,
+        "max_cars_in_lane": 10,
     }
 
     def __init__(self, render_mode=None):
         super(TrafficSimulatorEnv, self).__init__()
+
+        # Force render mode to human.
+        render_mode = "human"
 
         # Initialize your game components here
         self.lights_phases_config = [
@@ -44,26 +49,28 @@ class TrafficSimulatorEnv(Env):
                   lit_east_through, lit_east_left]),
         ]
 
+        self.render_mode = render_mode
+        self.screen: Optional[pygame.Surface] = None
+        self.clock: Optional[Clock] = None
+        self.environment: Optional[Environment] = None
+        self.lights_control = AdaptiveLightsControl(self.lights_phases_config, self.metadata["traffic_light_timings"])  # noqa
+        self.traffic = Traffic(1, streets, cars_config, game_config)
+
+        if render_mode is not None and render_mode not in self.metadata["render_modes"]:
+            raise ValueError(f"Invalid render_mode. Expected one of {self.metadata['render_modes']}, got {render_mode}")  # noqa
+
+        # Render 1 frame to initialize necessary state (like lane length)
+        if render_mode == "human":
+            self._render_frame()
+
         # State and action
         self.observation_space = spaces.Dict({
             # Assuming a maximum of 100 finished cars
             "current_phase": spaces.Discrete(start=0, n=len(self.lights_phases_config)),
-            "lanes": self._define_lanes_space(),
+            "current_phase_s": spaces.Discrete(start=0, n=self.metadata["traffic_light_timings"]["phase_max_s"]),
+            **self._define_lanes_space(),
         })
         self.action_space = spaces.Discrete(start=0, n=2)
-
-        self.screen: Optional[pygame.Surface] = None
-        self.clock: Optional[Clock] = None
-        self.environment: Optional[Environment] = None
-
-        self.lights_control = AdaptiveLightsControl(
-            self.lights_phases_config, self.metadata["traffic_light_timings"])
-        self.traffic = Traffic(1, streets, cars_config, game_config)
-
-        if render_mode is not None and render_mode not in self.metadata["render_modes"]:
-            raise ValueError(
-                f"Invalid render_mode. Expected one of {self.metadata['render_modes']}, got {render_mode}")
-        self.render_mode = render_mode
 
     def _define_lanes_space(self):
         """
@@ -74,10 +81,7 @@ class TrafficSimulatorEnv(Env):
         lanes_space = {}
         for s in streets:
             for al in s.approach_lanes:
-                lanes_space[f"queue_{s.approach_direction}_{al.to_direction}"] = spaces.Discrete(
-                    start=0, n=20)  # at most we care about 20 cars in the queue, waiting
-                lanes_space[f"cars_{s.approach_direction}_{al.to_direction}"] = spaces.Discrete(
-                    start=0, n=50)  # at most we care about 50 cars in the lane
+                lanes_space[f"lane_{s.approach_direction}_{al.to_direction}"] = spaces.Discrete(start=0, n=al.get_state_space())  # noqa
 
         return spaces.Dict(lanes_space)
 
@@ -121,13 +125,19 @@ class TrafficSimulatorEnv(Env):
         lanes = {}
         for s in streets:
             for al in s.approach_lanes:
-                lanes[f"queue_{s.approach_direction}_{al.to_direction}"] = al.get_queue_length()  # noqa
-                lanes[f"cars_{s.approach_direction}_{al.to_direction}"] = len(al.cars)  # noqa
+                lanes[f"lane_{s.approach_direction}_{al.to_direction}"] = al.get_state()  # noqa
 
         return {
             "current_phase": self.lights_control.current_phase_i,
-            "lanes": lanes
+            "current_phase_s": int(self.lights_control.get_phase_time()/1000),
+            **lanes
         }
+
+    def _obs_to_tuple(self, obs):
+        """
+        Convert the observation dictionary to a tuple for the Q-table
+        """
+        return tuple(obs.values())
 
     def _get_info(self):
         return {
@@ -141,13 +151,19 @@ class TrafficSimulatorEnv(Env):
 
         # TODO: add another time out termination
 
+        if not is_done:
+            for s in streets:
+                for al in s.approach_lanes:
+                    if al.get_queue_length() > self.metadata["max_queue_length"]:
+                        return True
+
         return is_done
 
     def _calculate_reward(self):
         """
         Reward for every car passing, penalty for every step the cars waiting
         """
-        phase_stay_s = self.lights_control.get_phase_time() / 1000
+        phase_stay_ms = self.lights_control.get_phase_time()
         total_queue_length = self.traffic.calc_total_queue_length()
         total_waiting = self.traffic.calc_waiting_time()
 
@@ -156,13 +172,13 @@ class TrafficSimulatorEnv(Env):
         last_cars_passed = self.last_switch_total_cars_passed if 'last_switch_total_cars_passed' in self.__dict__ else 0
         cars_since_switch = total_cars_passed - last_cars_passed
 
-        reward = -0.1 * total_queue_length + \
-            -0.1 * total_waiting + \
+        reward = -1 * total_queue_length + \
+            -1 * total_waiting + \
             1 * cars_since_switch + \
-            10 * phase_stay_s
+            10 * phase_stay_ms
 
         current_p = self.lights_control.current_phase_i
-        print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting:.3f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_s):3d}s")  # noqa
+        # print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting:.3f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_ms):3d}s")  # noqa
         return reward, total_cars_passed
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict, dict]:
@@ -187,12 +203,12 @@ class TrafficSimulatorEnv(Env):
         if action > 1 or action < 0:
             raise ValueError("Invalid action")
 
-        phase_stay_s = self.lights_control.get_phase_time() / 1000
+        # phase_stay_s = self.lights_control.get_phase_time() / 1000
         penalty_reward = 0
-        if phase_stay_s < self.metadata["traffic_light_timings"]["phase_min_s"]:
-            print(f"[env] penalty: phase stay time {phase_stay_s:.3f} < {self.metadata['traffic_light_timings']['phase_min_s']}s, reset action to 0")  # noqa
-            penalty_reward = -10
-            action = 0
+        # if phase_stay_s < self.metadata["traffic_light_timings"]["phase_min_s"]:
+        #     print(f"[env] penalty: phase stay time {phase_stay_s:.3f} < {self.metadata['traffic_light_timings']['phase_min_s']}s, reset action to 0")  # noqa
+        #     penalty_reward = -10
+        #     action = 0
 
         # switch lights to the next phase
         undertime = False
@@ -209,7 +225,8 @@ class TrafficSimulatorEnv(Env):
         observation = self._get_obs()
         reward, total_cars_passed = self._calculate_reward()
         terminated = self._check_if_done()
-        truncated = undertime or overtime
+        # truncated = overtime or undertime
+        truncated = False
         info = self._get_info()  # Additional info for debugging or complex environments
 
         # keep record of total_cars_passed after action=1

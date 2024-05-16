@@ -9,6 +9,7 @@ from pygame.time import Clock
 class Car:
     # static Counter
     CAR_ID_COUNTER = 0
+    start_delay_ms = 1000
 
     def __init__(self, street, lane, to_street, to_intsec, game_config, init_speed=1) -> None:
         self.id = Car.CAR_ID_COUNTER
@@ -27,7 +28,7 @@ class Car:
         self.width = 10  # car width
         self.length = random.randint(15, 25)  # car length
         self.drive_config = {
-            "front": random.randint(8, 12),
+            "front": random.randint(8, 12),  # car to car gap
         }
         self.game_config = game_config
 
@@ -56,9 +57,25 @@ class Car:
         if self.street is not None and not self.in_intersection:
             if self.lane.light is not None and self.lane.light.color == "red" and self.travel_distance >= self.street.length:
                 # stop criteria: lane is red, travel distance is greater than street length
+                self.stopped_at_ms = time.get_ticks()
                 return
 
-        # detect distance from the car in front
+        # --- delay start for a little while
+        # check if car is stopped
+        if hasattr(self, "stopped_at_ms"):
+            # switch to started, but do not moving yet.
+            self.started_at_ms = time.get_ticks()
+            delattr(self, "stopped_at_ms")
+            return
+        if hasattr(self, "started_at_ms"):
+            if time.get_ticks() - self.started_at_ms < self.start_delay_ms:
+                return
+            else:
+                delattr(self, "started_at_ms")
+                # continue to move the car
+        # --- finished delay start
+
+        # detect car in front
         front_car: Optional[Car] = None
         for i, car in enumerate(self.lane.get_cars()):
             if car == self:
