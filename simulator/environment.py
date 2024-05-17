@@ -1,6 +1,7 @@
 import pygame
 import math
 from simulator.car import Car
+from simulator.timer import clock
 
 from simulator.street import Lane, Street
 
@@ -45,7 +46,7 @@ class Environment:
         self.roads_config = roads_config
         self.next_tick()
 
-    def _draw_text(self, text, x, y, rotate, color=COLORS["WHITE"], h_center=False, v_center=False):
+    def draw_text(self, text, x, y, rotate, color=COLORS["WHITE"], h_center=False, v_center=False):
         text_surface = self.lane_font.render(text, True, color)
         rotated_text_surface = pygame.transform.rotate(text_surface, rotate)
         if h_center:
@@ -350,25 +351,23 @@ class Environment:
 
     def _draw_timer(self):
         # draw elapsed time
-        clock_ms = pygame.time.get_ticks()
-        self._draw_text(
-            f"World time: {clock_ms//1000}s", 10, 8, 0, self.COLORS["WHITE"])
+        clock_ms = clock().get_ticks()
+        self.draw_text(f"World time: {clock_ms//1000}s", 10, 8, 0, self.COLORS["WHITE"])  # noqa
 
     def draw_countdown(self, count: str):
-        width, height = self.surface.get_width(), self.surface.get_height()
-        self._draw_text(f"Count down: {count}",
-                        10, 40, 0, self.COLORS["WHITE"])
+        # width, height = self.surface.get_width(), self.surface.get_height()
+        self.draw_text(f"Count down: {count}", 10, 40, 0, self.COLORS["WHITE"])  # noqa
 
     def draw_dialog(self, text: str):
         width, height = self.surface.get_width(), self.surface.get_height()
         dialog_h = 100
 
         dialog_y = (height // 2) - (dialog_h // 2)
-        print("Draw dialog", text, pygame.time.get_ticks()//1000)
+        print("Draw dialog", text, clock().get_ticks()//1000)
         pygame.draw.rect(
             self.surface, self.COLORS["WHITE"], (0, dialog_y, width, dialog_h))
-        self._draw_text(text, width // 2, dialog_y + dialog_h //
-                        2, 0, self.COLORS["BLACK"], h_center=True, v_center=True)
+        self.draw_text(text, width // 2, dialog_y + dialog_h //
+                       2, 0, self.COLORS["BLACK"], h_center=True, v_center=True)
 
     def next_tick(self):
         self.surface.fill(self.COLORS["BACKGROUND"])

@@ -5,29 +5,34 @@ import numpy as np
 import datetime
 
 from simulator.gym_q_agent import TrafficLightQAgent
+from simulator.timer import set_clock
+
+# initialize it to 3x speed
+set_clock(speed=3)
 
 
 register(id="traffic_light", entry_point="simulator.gym_env:TrafficSimulatorEnv")
 env = gym.make("traffic_light", render_mode="human")
 
 # hyperparameters
-learning_rate = 0.1
-n_episodes = 10
+learning_rate = 1
+n_episodes = 10  # explore the first 5 episodes in decreasing epsilon, then use 0.01 for the rest 5 episodes
 start_epsilon = 1.0
 # start_epsilon = 0.5
 # reduce the exploration over time
 epsilon_decay = start_epsilon / (n_episodes / 2)
 final_epsilon = 0.01
 
-agent = TrafficLightQAgent(
-    env=env,
-    learning_rate=learning_rate,
-    initial_epsilon=start_epsilon,
-    epsilon_decay=epsilon_decay,
-    final_epsilon=final_epsilon,
-)
 
 for seed in range(100):
+    agent = TrafficLightQAgent(
+        env=env,
+        learning_rate=learning_rate,
+        initial_epsilon=start_epsilon,
+        epsilon_decay=epsilon_decay,
+        final_epsilon=final_epsilon,
+    )
+
     print(f"[train] {datetime.datetime.now().isoformat()} Training with seed {seed}")  # noqa
     for episode in tqdm(range(n_episodes)):
         obs, info = env.reset(seed=seed)
@@ -59,7 +64,7 @@ for seed in range(100):
         avg_error = np.mean(agent.training_error[-100:])
         # add time to print
         print(f"[train] {datetime.datetime.now().isoformat()} Episode {episode}: Total Reward = {total_reward}, Average Training Error = {avg_error}")  # noqa
-        agent.print_q_table()
+        agent.save_q_table()
 
 
 env.close()

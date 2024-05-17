@@ -1,7 +1,7 @@
 from typing import Optional
-from pygame import time
 from simulator.car import Car
 from simulator.street import Street
+from simulator.timer import clock
 import random
 
 
@@ -72,11 +72,11 @@ class Traffic:
             self.all_cars.append(car)
             current_lane.cars.append(car)
             num_car_generated += 1
-            self.last_spawn_ms = time.get_ticks()
+            self.last_spawn_ms = clock().get_ticks()
         self.num_spawned_cars += num_car_generated
 
     def next_tick(self):
-        clock_ms = time.get_ticks()
+        clock_ms = clock().get_ticks()
         cars_per_min = self.cars_config["cars_per_min"]
 
         # calculate step in minutes
@@ -102,7 +102,7 @@ class Traffic:
         return clock_ms
 
     def _get_step_ms(self):
-        clock_ms = time.get_ticks()
+        clock_ms = clock().get_ticks()
 
         if 'last_clock_ms' not in self.__dict__:
             self.last_clock_ms = clock_ms
@@ -115,13 +115,13 @@ class Traffic:
         """
         Calculate the updated total waiting time of all cars on all approaching lanes
         """
-        total_waiting_s = 0
+        total_waiting_ms = 0
         for street in self.streets:
             for lane in street.approach_lanes:
                 for car in lane.cars:
-                    total_waiting_s += car.updated_waiting_s
+                    total_waiting_ms += car.updated_waiting_ms
 
-        return total_waiting_s
+        return total_waiting_ms
 
     def calc_total_queue_length(self):
         """

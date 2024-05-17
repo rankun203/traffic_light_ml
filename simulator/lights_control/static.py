@@ -1,5 +1,6 @@
 import math
 from pygame import time
+from simulator.timer import clock
 
 
 class StaticPhase:
@@ -17,7 +18,7 @@ class StaticLightsControl:
         self.phases = lights_phases_config
 
     def next_tick(self):
-        clock_ms = time.get_ticks()
+        clock_ms = clock().get_ticks()
         total_duration_s = sum([phase.duration_s for phase in self.phases])
         phase_ms = clock_ms % (total_duration_s * 1000)
 

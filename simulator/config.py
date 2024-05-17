@@ -2,14 +2,14 @@
 from simulator.street import Intersection, Lane, Street
 from simulator.lights_control.light import lit_north_left, lit_north_through, lit_north_right, lit_south_left, lit_south_through, lit_south_right, lit_west_left, lit_west_through, lit_west_right, lit_east_left, lit_east_through, lit_east_right
 
-screen_width = 800
+screen_width = 600
 screen_height = 600
 
 game_config = {
-    "FPS": 60,  # frames per second
+    "FPS": 120,  # frames per second
     "SIMULATE_DURATION": 60,  # in seconds, cars are distributed over this time
-    "screen_width": 800,
-    "screen_height": 600,
+    "screen_width": screen_width,
+    "screen_height": screen_height,
 }
 
 cars_config = {

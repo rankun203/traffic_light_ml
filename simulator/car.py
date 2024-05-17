@@ -2,8 +2,7 @@ from random import randint
 from typing import Optional
 import random
 
-from pygame import time
-from pygame.time import Clock
+from simulator.timer import clock
 
 
 class Car:
@@ -24,7 +23,7 @@ class Car:
         self.to_intsec = to_intsec
         self.in_intersection = False
         self.travel_distance = 0  # travel unit, px for now
-        self.updated_waiting_s = 0
+        self.updated_waiting_ms = 0
         self.width = 10  # car width
         self.length = random.randint(15, 25)  # car length
         self.drive_config = {
@@ -41,7 +40,7 @@ class Car:
         self.rotate = rotate
 
     def _get_step_ms(self):
-        clock_ms = time.get_ticks()
+        clock_ms = clock().get_ticks()
 
         if 'last_clock_ms' not in self.__dict__:
             self.last_clock_ms = clock_ms
@@ -55,20 +54,23 @@ class Car:
         Returns True if the car is out of the simulation
         """
         if self.street is not None and not self.in_intersection:
-            if self.lane.light is not None and self.lane.light.color == "red" and self.travel_distance >= self.street.length:
-                # stop criteria: lane is red, travel distance is greater than street length
-                self.stopped_at_ms = time.get_ticks()
+            has_light = self.lane.light is not None
+            should_stop = has_light and self.lane.light.color in ["yellow", "red"]  # noqa
+            approached_line = self.travel_distance >= (self.street.length - 8)
+            if should_stop and approached_line:
+                # stop criteria: lane is red, travel distance is greater than street length - 8
+                self.stopped_at_ms = clock().get_ticks()
                 return
 
         # --- delay start for a little while
         # check if car is stopped
         if hasattr(self, "stopped_at_ms"):
             # switch to started, but do not moving yet.
-            self.started_at_ms = time.get_ticks()
+            self.started_at_ms = clock().get_ticks()
             delattr(self, "stopped_at_ms")
             return
         if hasattr(self, "started_at_ms"):
-            if time.get_ticks() - self.started_at_ms < self.start_delay_ms:
+            if clock().get_ticks() - self.started_at_ms < self.start_delay_ms:
                 return
             else:
                 delattr(self, "started_at_ms")
@@ -96,14 +98,14 @@ class Car:
             self.current_speed = self.init_speed
 
         # forwards
-        step_s = self._get_step_ms() / 1000
-        self.travel_distance += self.current_speed * step_s
+        step_ms = self._get_step_ms()
+        self.travel_distance += self.current_speed * (step_ms / 1000)
 
         # update car waiting time if car is not moving
         if self.current_speed < 1:
-            self.updated_waiting_s += step_s
+            self.updated_waiting_ms += step_ms
         else:
-            self.updated_waiting_s = 0
+            self.updated_waiting_ms = 0
 
         if self.in_intersection and self.travel_distance + self.length >= self.to_intsec.length:
             # leaving intersection

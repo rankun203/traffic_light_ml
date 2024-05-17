@@ -1,4 +1,5 @@
 from math import ceil
+import math
 from typing import Optional
 from simulator.car import Car
 from simulator.lights_control.light import Light
@@ -88,20 +89,30 @@ class Lane:
         """
         Return the state definition for the lane: number of cells
         """
-        # 37 bins
-        # 8 is the minimum distance unit, @see Car.drive_config
-        return ceil(self.length / self.bin_size)
+        # state strategy 2: queue length
+        return 3  # max_queue_length(8)/4 + 1 =  3
+
+        # # 37 bins
+        # # 8 is the minimum distance unit, @see Car.drive_config
+        # return ceil(self.length / self.bin_size)
 
     def get_state(self):
         """
         Return an array of each bin of the lane and whether it is occupied
         """
-        state = {i: 0 for i in range(self.get_state_space())}
-        for car in self.cars:
-            dist_from_intsec = self.length - car.travel_distance
-            bin = max(0, int(dist_from_intsec / self.bin_size))
-            state[bin] = 1
-        return state
+        ql = self.get_queue_length()
+        # 0:0, 1-4:1, 5-8:2
+        ql = math.ceil(ql / 4)
+        avg_waiting = int(self.get_avg_waiting_time() / 1000)
+        # 0:0, 1-10:1, 11-20:2, 21-30:3, 31-40:4
+        avg_waiting = math.ceil(ql / 10)
+        return ql
+        # state = {i: 0 for i in range(self.get_state_space())}
+        # for car in self.cars:
+        #     dist_from_intsec = self.length - car.travel_distance
+        #     bin = max(0, int(dist_from_intsec / self.bin_size))
+        #     state[bin] = 1
+        # return state
 
     def get_queue_length(self):
         """
@@ -112,6 +123,18 @@ class Lane:
             if car.current_speed < 1:
                 queue_length += 1
         return queue_length
+
+    def get_avg_waiting_time(self):
+        total_waiting_ms = sum([car.updated_waiting_ms for car in self.cars])
+
+        return total_waiting_ms / len(self.cars) if len(self.cars) > 0 else 0
+
+        # total_speed = 0
+        # num_cars = 0
+        # for car in self.cars:
+        #     total_speed += car.current_speed
+        #     num_cars += 1
+        # return total_speed / num_cars if num_cars > 0 else 0
 
 
 class Street:

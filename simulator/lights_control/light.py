@@ -5,6 +5,9 @@ class Light:
     def set_green(self):
         self.color = "green"
 
+    def set_yellow(self):
+        self.color = "yellow"
+
     def set_red(self):
         self.color = "red"
 
