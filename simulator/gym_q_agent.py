@@ -60,6 +60,7 @@ class TrafficLightQAgent:
         obs_key = self._obs_to_tuple(obs)
         if random.random() < self.epsilon:
             action = self.env.action_space.sample()
+            print(f"[agent] exploring: phase {obs['p']}, phase duration {obs['ps']}")  # noqa
             print(f"[agent] exploring:  Chose random action {action}")
         else:
             action = int(np.argmax(self.q_values[obs_key]))

@@ -32,6 +32,7 @@ class TrafficSimulatorEnv(Env):
         },
         "max_queue_length": 8,
         "max_cars_in_lane": 8,
+        "max_waiting_time": 100  # 100s
     }
 
     def __init__(self, render_mode=None):
@@ -179,13 +180,13 @@ class TrafficSimulatorEnv(Env):
         last_cars_passed = self.last_switch_total_cars_passed if 'last_switch_total_cars_passed' in self.__dict__ else 0
         cars_since_switch = total_cars_passed - last_cars_passed
 
-        reward = -1 * total_queue_length + \
-            -1 * ((total_waiting_ms / 1000) / 12) + \
-            1 * cars_since_switch + \
-            12 * (phase_stay_ms / 1000)  # reward for staying in the same phase # noqa
+        reward = -total_queue_length + \
+            -(total_waiting_ms / 1000 / 8) + \
+            cars_since_switch * 10 + \
+            (phase_stay_ms / 1000) * 100  # reward for staying in the same phase # noqa
 
         current_p = self.lights_control.current_phase_i
-        print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting_ms/1000:.0f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_ms/1000):3d}s")  # noqa
+        print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting_ms/1000/8:.0f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_ms/1000):3d}s")  # noqa
         return reward, total_cars_passed
 
     def reset(self, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[dict, dict]:
@@ -214,6 +215,7 @@ class TrafficSimulatorEnv(Env):
         # switch lights to the next phase
         # undertime = False
         # yellow light, then next phase
+        do_switch = action == self.lights_control.current_phase_i
         self.lights_control.to_phase(action)
 
         # Perform one step of the environment
@@ -231,7 +233,7 @@ class TrafficSimulatorEnv(Env):
         info = self._get_info()  # Additional info for debugging or complex environments
 
         # keep record of total_cars_passed after action=1
-        if action == 1:
+        if do_switch:
             self.last_switch_total_cars_passed = total_cars_passed
 
         if self.render_mode == "human":

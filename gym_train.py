@@ -1,14 +1,13 @@
 import gymnasium as gym
+import statistics
 from gymnasium.envs.registration import register
 from tqdm import tqdm
 import numpy as np
 import datetime
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 from simulator.gym_q_agent import TrafficLightQAgent
 from simulator.timer import set_clock
+from utils.plot_metrics import plot_metrics
 
 # initialize it to 3x speed
 set_clock(speed=3)
@@ -27,16 +26,6 @@ epsilon_decay = start_epsilon / (n_episodes / 2)
 final_epsilon = 0.01
 
 
-def plot_rewards(rewards: list[float]):
-    title = "Rewards over episodes"
-    plt.plot(rewards)
-    plt.title(title)
-    plt.xlabel('Episode')
-    plt.ylabel('Reward')
-    plt.grid()
-    plt.show()
-
-
 for seed in range(10):
     agent = TrafficLightQAgent(
         env=env,
@@ -48,11 +37,12 @@ for seed in range(10):
 
     print(f"[train] {datetime.datetime.now().isoformat()} Training with seed {seed}")  # noqa
     rewards_over_episodes: list[float] = []
+    errors_over_episodes: list[float] = []
     for episode in tqdm(range(n_episodes)):
         obs, info = env.reset(seed=seed)
         done = False
 
-        total_reward = 0
+        episode_rewards: list[float] = []
 
         # play one episode
         while not done:
@@ -66,7 +56,7 @@ for seed in range(10):
             done = terminated or truncated
             # done = terminated
             obs = next_obs
-            total_reward += float(reward)
+            episode_rewards.append(float(reward))
 
             if done:
                 print(f'resetting (action={action}, reward={reward})', next_obs, info)  # noqa
@@ -75,13 +65,16 @@ for seed in range(10):
 
         agent.decay_epsilon()
         # Average training error over the last 100 episodes
-        avg_error = np.mean(agent.training_error[-100:])
+        avg_e_error = np.mean(agent.training_error[-100:])
+        avg_e_reward = statistics.mean(episode_rewards)
         # add time to print
-        print(f"[train] {datetime.datetime.now().isoformat()} Episode {episode}: Total Reward = {total_reward}, Average Training Error = {avg_error}")  # noqa
+        print(f"[train] {datetime.datetime.now().isoformat()} Episode {episode}: Mean Reward = {avg_e_reward}, Average Training Error = {avg_e_error}")  # noqa
         agent.save_q_table()
-        rewards_over_episodes.append(total_reward)
+        rewards_over_episodes.append(avg_e_reward)
+        errors_over_episodes.append(float(avg_e_error))
+        plot_metrics(rewards_over_episodes, errors_over_episodes, f'seed{seed}_e{episode}')  # noqa
 
-    plot_rewards(rewards_over_episodes)
+    plot_metrics(rewards_over_episodes, errors_over_episodes, f'seed{seed}')
 
 
 env.close()
