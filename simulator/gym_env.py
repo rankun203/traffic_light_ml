@@ -71,7 +71,7 @@ class TrafficSimulatorEnv(Env):
             "ps": spaces.Discrete(start=0, n=self.metadata["traffic_light_timings"]["phase_max_s"]),
             **self._define_lanes_space(),
         })
-        self.action_space = spaces.Discrete(start=0, n=2)
+        self.action_space = spaces.Discrete(start=0, n=4)  # phases
 
     def _define_lanes_space(self):
         """
@@ -202,14 +202,8 @@ class TrafficSimulatorEnv(Env):
 
     def step(self, action):
         """
-        action:
-
-        - 0: Do nothing
-        - 1: Change the traffic lights
+        action: next phase
         """
-        if action > 1 or action < 0:
-            raise ValueError("Invalid action")
-
         # phase_stay_s = self.lights_control.get_phase_time() / 1000
         penalty_reward = 0
         # if phase_stay_s < self.metadata["traffic_light_timings"]["phase_min_s"]:
@@ -219,9 +213,8 @@ class TrafficSimulatorEnv(Env):
 
         # switch lights to the next phase
         # undertime = False
-        if action == 1:
-            # yellow light, then next phase
-            self.lights_control.next_phase()
+        # yellow light, then next phase
+        self.lights_control.to_phase(action)
 
         # Perform one step of the environment
         overtime = self.lights_control.next_tick()

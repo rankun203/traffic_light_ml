@@ -16,7 +16,7 @@ def default_q_value():
     """
     Default Q-value for a state-action pair: [0, 0]
     """
-    return np.zeros(2)
+    return np.zeros(4)
 
 
 class TrafficLightQAgent:
@@ -63,8 +63,9 @@ class TrafficLightQAgent:
             print(f"[agent] exploring:  Chose random action {action}")
         else:
             action = int(np.argmax(self.q_values[obs_key]))
-            print(f"[agent] exploiting: q", self.q_values[obs_key])
-            print(f"[agent] exploiting: Chose best known action {action}")
+            print(f"[agent] exploiting: state", obs_key)
+            print(f"[agent] exploiting: q value", self.q_values[obs_key])
+            print(f"[agent] exploiting: chose {action}")
             # if action == 1:
             #     print(f"[agent] get_action=1 {obs_key}, Q {self.q_values[obs_key]}")  # noqa
         return action
@@ -82,22 +83,22 @@ class TrafficLightQAgent:
 
         # terminated - mute the future Q-value
         # Best future Q-value for the next state
-        prev = self.q_values[obs_key]
-        prev0 = prev[0]
-        prev1 = prev[1]
+        # prev = self.q_values[obs_key]
+        # prev0 = prev[0]
+        # prev1 = prev[1]
         future_q_value = (not terminated) * np.max(self.q_values[next_obs_key])
         q_sa = self.q_values[obs_key][action]
 
         # q-learning update rule, derived from the Bellman equation
         temporal_difference = reward + self.df * future_q_value - q_sa
         self.q_values[obs_key][action] = q_sa + self.lr * temporal_difference
-        nxt = self.q_values[obs_key]
-        nxt0 = nxt[0]
-        nxt1 = nxt[1]
+        # nxt = self.q_values[obs_key]
+        # nxt0 = nxt[0]
+        # nxt1 = nxt[1]
 
-        if prev0 != nxt0 or prev1 != nxt1:
-            print(f"[agent] update state", obs_key)
-            print(f"[agent] update q {(prev0, prev1)} to {(nxt0, nxt1)}")  # noqa
+        # if prev0 != nxt0 or prev1 != nxt1:
+        #     print(f"[agent] update state", obs_key)
+        #     print(f"[agent] update q {(prev0, prev1)} to {(nxt0, nxt1)}")  # noqa
 
         self.training_error.append(temporal_difference)
 

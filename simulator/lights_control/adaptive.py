@@ -22,6 +22,7 @@ class AdaptiveLightsControl:
         self.phase_yellow_s: int = timings["phase_yellow_s"]
         self.current_phase_i = 0  # defaults to 0, but will be overridden by reset()
         self.next_phase_started_ms: Optional[float] = None
+        self.next_phase_i: Optional[int] = None
 
     def reset(self, seed: Optional[int] = None):
         """
@@ -31,13 +32,17 @@ class AdaptiveLightsControl:
         self.current_phase_i = random.randint(0, len(self.phases) - 1)
         self.phase_start_ms = clock().get_ticks()
 
-    def next_phase(self):
+    def to_phase(self, phase_i: int):
+        if phase_i == self.current_phase_i:
+            # no change
+            return
         if self.next_phase_started_ms is not None:
             # already in the middle of a phase change
             return
 
         clock_ms = clock().get_ticks()
         self.next_phase_started_ms = clock_ms
+        self.next_phase_i = phase_i
 
         # self.current_phase_i = (self.current_phase_i + 1) % len(self.phases)
 
@@ -46,15 +51,19 @@ class AdaptiveLightsControl:
         # return undertime
 
     def switch_to_next_phase(self):
-        self.current_phase_i = (self.current_phase_i + 1) % len(self.phases)
+        # self.current_phase_i = (self.current_phase_i + 1) % len(self.phases)
+        if self.next_phase_i is None:
+            return
+        self.current_phase_i = self.next_phase_i
         self.phase_start_ms = clock().get_ticks()
+        self.next_phase_i = None
+        self.next_phase_started_ms = None
 
     def next_tick(self):
         if self.next_phase_started_ms is not None:
             clock_ms = clock().get_ticks()
             if clock_ms - self.next_phase_started_ms >= self.phase_yellow_s * 1000:
                 self.switch_to_next_phase()
-                self.next_phase_started_ms = None
 
         # set current phase lights to green, all others to red
         current_phase = self.phases[self.current_phase_i]
