@@ -103,9 +103,9 @@ class Lane:
         ql = self.get_queue_length()
         # 0:0, 1-4:1, 5-8:2
         ql = math.ceil(ql / 4)
-        avg_waiting = int(self.get_avg_waiting_time() / 1000)
+        # avg_waiting = int(self.get_avg_waiting_time() / 1000)
         # 0:0, 1-10:1, 11-20:2, 21-30:3, 31-40:4
-        avg_waiting = math.ceil(ql / 10)
+        # avg_waiting = math.ceil(ql / 10)
         return ql
         # state = {i: 0 for i in range(self.get_state_space())}
         # for car in self.cars:

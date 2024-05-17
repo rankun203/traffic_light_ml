@@ -108,8 +108,7 @@ class REINFORCE:
         Returns:
             action: Action to be performed
         """
-        state = torch.tensor(
-            np.array([state]), device=device, dtype=torch.float32)
+        state = torch.tensor(np.array([state]), device=device, dtype=torch.float32)  # noqa
         action_means, action_stddevs = self.net(state)
 
         # create a normal distribution from the predicted

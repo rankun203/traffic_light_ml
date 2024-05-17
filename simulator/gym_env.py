@@ -180,7 +180,7 @@ class TrafficSimulatorEnv(Env):
         cars_since_switch = total_cars_passed - last_cars_passed
 
         reward = -1 * total_queue_length + \
-            -1 * (total_waiting_ms / 1000) + \
+            -1 * ((total_waiting_ms / 1000) / 12) + \
             1 * cars_since_switch + \
             12 * (phase_stay_ms / 1000)  # reward for staying in the same phase # noqa
 
