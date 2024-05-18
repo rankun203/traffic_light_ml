@@ -22,7 +22,7 @@ n_episodes = 100  # explore the first 5 episodes in decreasing epsilon, then use
 start_epsilon = 1.0
 # start_epsilon = 0.5
 # reduce the exploration over time
-epsilon_decay = start_epsilon / (n_episodes / 2)
+epsilon_decay = start_epsilon / n_episodes
 final_epsilon = 0.01
 
 

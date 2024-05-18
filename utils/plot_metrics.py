@@ -36,3 +36,6 @@ def plot_metrics(rewards: list[float], errors: list[float], key: str, show=False
     plt.savefig(f'training_logs/{key}.pdf')
     if show:
         plt.show()
+
+    fig.clear()
+    plt.close(fig)

@@ -182,8 +182,8 @@ class TrafficSimulatorEnv(Env):
 
         reward = -total_queue_length + \
             -(total_waiting_ms / 1000 / 8) + \
-            cars_since_switch * 10 + \
-            phase_stay_ms * 100  # reward for staying in the same phase # noqa
+            10 * cars_since_switch + \
+            10 * (phase_stay_ms / 1000)  # reward for staying in the same phase # noqa
 
         current_p = self.lights_control.current_phase_i
         print(f"[env] reward={reward:.3f}, total_queue_length={int(total_queue_length):3d}, total_waiting={total_waiting_ms/1000/8:.0f}, cars_since_switch={int(cars_since_switch):3d}, p{current_p}={int(phase_stay_ms/1000):3d}s")  # noqa
